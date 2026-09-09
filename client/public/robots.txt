@@ -1,0 +1,10 @@
+# Robots.txt for InternConnect AI Platform
+User-agent: *
+Allow: /
+Allow: /explore
+Disallow: /admin/
+Disallow: /student/
+Disallow: /company/
+Disallow: /auth/
+
+Sitemap: https://internconnect-ai.vercel.app/sitemap.xml
