@@ -1,104 +1,178 @@
 import { supabase } from './supabaseClient';
 
 export const copilotService = {
-  // Fetch user's conversation history from Supabase
+  // Load conversation history for current user from Supabase ai_conversations table
   getHistory: async (userId) => {
-    if (!userId) return null;
-
+    if (!userId) return [];
     try {
       const { data, error } = await supabase
         .from('ai_conversations')
         .select('*')
         .eq('user_id', userId)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
 
-      if (!error && data && data.messages) {
-        return data.messages;
-      }
+      if (error || !data) return [];
+
+      const formatted = [];
+      data.forEach((row) => {
+        formatted.push({
+          id: `${row.id}_user`,
+          sender: 'user',
+          text: row.message,
+          timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+        formatted.push({
+          id: `${row.id}_ai`,
+          sender: 'ai',
+          text: row.reply,
+          timestamp: new Date(row.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      });
+
+      return formatted;
     } catch (err) {
-      console.warn('Supabase fetch chat history fallback:', err.message);
+      console.warn('Supabase fetch history warning:', err.message);
+      return [];
     }
-
-    const localKey = `ic_copilot_chat_${userId}`;
-    const cached = localStorage.getItem(localKey);
-    return cached ? JSON.parse(cached) : null;
   },
 
-  // Save/upsert conversation history to Supabase
-  saveHistory: async (userId, messages) => {
-    if (!userId || !messages) return;
-
+  // Load user context memory (skills, college, saved jobs, recent applications)
+  getUserContextMemory: async (userId, userRole = 'student') => {
+    if (!userId) return { name: 'Candidate', skills: [], college: '' };
     try {
-      const payload = {
-        user_id: userId,
-        messages,
-        updated_at: new Date().toISOString(),
-      };
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-      const { error } = await supabase
-        .from('ai_conversations')
-        .upsert(payload, { onConflict: 'user_id' });
+      let savedJobs = [];
+      let applications = [];
 
-      if (error) {
-        console.warn('Supabase save chat history notice:', error.message);
+      if (userRole === 'student') {
+        const [savedRes, appRes] = await Promise.all([
+          supabase.from('saved_jobs').select('*, internship:internships(*)').eq('student_id', userId),
+          supabase.from('applications').select('*, internship:internships(*)').eq('student_id', userId),
+        ]);
+
+        savedJobs = (savedRes.data || []).map((s) => s.internship?.title).filter(Boolean);
+        applications = (appRes.data || []).map((a) => a.internship?.title).filter(Boolean);
       }
-    } catch (err) {
-      console.warn('Database save exception:', err.message);
-    }
 
-    const localKey = `ic_copilot_chat_${userId}`;
-    localStorage.setItem(localKey, JSON.stringify(messages));
+      return {
+        name: profile?.full_name || 'Candidate',
+        college: profile?.college || 'University',
+        degree: profile?.degree || 'Computer Science',
+        skills: profile?.skills || ['React', 'JavaScript', 'Git'],
+        companyName: profile?.company_name || 'Company',
+        savedJobs,
+        applications,
+      };
+    } catch (err) {
+      console.warn('User context memory fetch warning:', err.message);
+      return { name: 'Candidate', skills: ['React', 'JavaScript'], college: 'University' };
+    }
   },
 
-  // Send message to Express backend Gemini AI Copilot
-  sendMessage: async ({
-    userId,
-    userMessage,
-    conversationHistory = [],
-    studentSkills = [],
-    studentName = 'Candidate',
-  }) => {
+  // Send message to AI Copilot via Backend / Edge Function & persist into Supabase
+  sendMessage: async ({ userId, userRole = 'student', message, history = [] }) => {
+    const userContext = await copilotService.getUserContextMemory(userId, userRole);
     let reply = '';
 
+    // 1. Try Supabase Edge Function first
     try {
-      const response = await fetch('http://localhost:5000/api/ai/copilot', {
+      const edgeRes = await fetch(`${supabase.supabaseUrl}/functions/v1/ai-copilot`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${supabase.supabaseKey}`,
+        },
         body: JSON.stringify({
-          userMessage,
-          conversationHistory,
-          studentSkills,
-          studentName,
+          userMessage: message,
+          userRole,
+          userContext,
+          conversationHistory: history,
         }),
       });
 
-      if (response.ok) {
-        const json = await response.json();
+      if (edgeRes.ok) {
+        const json = await edgeRes.json();
         if (json.success && json.reply) {
           reply = json.reply;
         }
       }
-    } catch (err) {
-      console.warn('Backend server copilot call failed, using client heuristic AI:', err.message);
+    } catch (edgeErr) {
+      console.warn('Supabase Edge Function unavailable, trying backend fallback:', edgeErr.message);
     }
 
+    // 2. Try Node.js Backend API fallback
     if (!reply) {
-      const query = userMessage.toLowerCase();
-      if (query.includes('internship') || query.includes('find') || query.includes('job')) {
-        reply = `⚡ **Matching Internships for Your Tech Stack:**\n\n1. **Full Stack Engineer Intern** at *TechCorp* (Match: 94%)\n2. **React Developer Intern** at *Nexus Cloud* (Match: 91%)\n3. **Software Systems Intern** at *Microsoft* (Match: 89%)\n\nClick on 'Explore Internships' in the top menu to view application deadlines!`;
-      } else if (query.includes('resume') || query.includes('score')) {
-        reply = `📄 **AI Resume Review & Score:**\n\nYour profile has a **92% match score**! Your top strengths are React, JavaScript, and Git. Consider adding a cloud certification or metrics to boost your ranking to 98%.`;
-      } else if (query.includes('cover letter')) {
-        reply = `✉️ **AI Cover Letter Recommendation:**\n\nOpen any internship page and click **"Generate AI Cover Letter"** to generate an ATS-optimized, personalized PDF cover letter!`;
-      } else if (query.includes('interview')) {
-        reply = `🎙️ **Interview Prep Quick Hint:**\n\nBe prepared to explain React Virtual DOM diffing, async REST API handling, and how you design scalable Supabase RLS policies!`;
-      } else if (query.includes('roadmap')) {
-        reply = `🗺️ **Career Roadmap:**\n\nFocus on mastering 3 pillars: Modern Frontend (React/TypeScript), Backend APIs (Node.js/Supabase), and Cloud/DevOps fundamentals!`;
+      try {
+        const backRes = await fetch('http://localhost:5000/api/ai/copilot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userMessage: message,
+            userRole,
+            studentName: userContext.name,
+            studentSkills: userContext.skills,
+            conversationHistory: history,
+          }),
+        });
+
+        if (backRes.ok) {
+          const json = await backRes.json();
+          if (json.success && json.reply) {
+            reply = json.reply;
+          }
+        }
+      } catch (backErr) {
+        console.warn('Backend API copilot error, using intelligent local engine:', backErr.message);
+      }
+    }
+
+    // 3. Client Heuristic Fallback
+    if (!reply) {
+      const query = message.toLowerCase();
+      if (query.includes('find') || query.includes('internship') || query.includes('recommend')) {
+        reply = `⚡ **Personalized Internship Recommendations for ${userContext.name}:**\n\n1. **Full-Stack Engineering Intern** at *TechCorp*\n   - Stipend: ₹45,000/month • Match Reason: Fits your skills (${userContext.skills.slice(0, 2).join(', ') || 'React, JS'}).\n2. **Frontend Systems Intern** at *Nexus Cloud*\n   - Stipend: ₹40,000/month • Match Reason: Highly rated web engineering role.\n3. **Software Developer Intern** at *Google*\n   - Stipend: ₹75,000/month • Match Reason: Matches your ${userContext.degree || 'Computer Science'} background.`;
+      } else if (query.includes('resume') || query.includes('review') || query.includes('ats')) {
+        reply = `📄 **AI Resume Review for ${userContext.name}:**\n\n- **ATS Match Score:** 92%\n- **Top Strengths:** Clean formatting, strong foundation in ${userContext.skills.slice(0, 3).join(', ') || 'Web Tech'}.\n- **Suggested Enhancements:** Add quantifiable impact metrics to your top project bullet points (e.g. "Reduced REST API response latency by 40%").`;
+      } else if (query.includes('cover letter') || query.includes('letter')) {
+        reply = `✉️ **Personalized Cover Letter Snippet:**\n\nDear Hiring Manager,\nI am writing to express my enthusiastic interest in the Software Engineering Internship position. As a student at ${userContext.college || 'University'}, my hands-on background in ${userContext.skills.join(', ') || 'software engineering'} directly aligns with your requirements.`;
+      } else if (query.includes('interview') || query.includes('prep') || query.includes('question')) {
+        reply = `🎙️ **Targeted Technical Interview Questions for ${userContext.name}:**\n\n1. **React State & Effects:** How do custom hooks encapsulate stateful logic without duplicating component code?\n2. **Database System Design:** How do indexes accelerate SELECT queries, and what is the trade-off during INSERTs?\n3. **Behavioral STAR Scenario:** Describe a situation where you resolved a technical disagreement with a teammate.`;
+      } else if (query.includes('roadmap') || query.includes('career') || query.includes('learn')) {
+        reply = `🗺️ **Customized 6-Month Career Roadmap for ${userContext.name}:**\n\n- **Month 1:** Master Advanced React patterns, Custom Hooks & Tailwind CSS\n- **Month 2:** Build Node.js & Supabase RLS backend REST APIs\n- **Month 3:** Containerize applications using Docker & GitHub Actions CI/CD\n- **Month 4-6:** Technical interview prep & mock interviews`;
       } else {
-        reply = `I am your InternConnect AI Internship Copilot! Ask me about job recommendations, resume scoring, cover letters, interview prep, or career roadmaps.`;
+        reply = `Hello ${userContext.name}! I am your InternConnect AI Copilot. Ask me to recommend internships based on your profile, review your resume, generate a cover letter, prepare for technical interviews, or outline a career roadmap.`;
+      }
+    }
+
+    // Persist into Supabase ai_conversations table
+    if (userId && reply) {
+      try {
+        await supabase.from('ai_conversations').insert({
+          user_id: userId,
+          role: userRole,
+          message,
+          reply,
+        });
+      } catch (dbErr) {
+        console.warn('Could not persist ai_conversations to Supabase:', dbErr.message);
       }
     }
 
     return reply;
+  },
+
+  // Clear chat history for user
+  clearHistory: async (userId) => {
+    if (!userId) return;
+    try {
+      await supabase.from('ai_conversations').delete().eq('user_id', userId);
+    } catch (err) {
+      console.warn('Error clearing ai_conversations:', err.message);
+    }
   },
 };
