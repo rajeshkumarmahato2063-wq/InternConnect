@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Briefcase, Users, Calendar, CheckCircle, Plus, ArrowRight } from 'lucide-react';
+import { Briefcase, Users, Calendar, CheckCircle, Plus, Video, ExternalLink, Clock, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import Card from '../components/Card/Card';
@@ -15,46 +15,77 @@ const CompanyDashboard = () => {
   const [interviewsCount, setInterviewsCount] = useState(0);
   const [shortlistedCount, setShortlistedCount] = useState(0);
   const [recentApplications, setRecentApplications] = useState([]);
+  const [companyInterviews, setCompanyInterviews] = useState([]);
+  const [interviewFilter, setInterviewFilter] = useState('upcoming'); // 'today', 'upcoming', 'completed'
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCompanyData = async () => {
-      setLoading(true);
-      if (user?.id) {
-        const jobs = await internshipService.getCompanyInternships(user.id);
-        const apps = await internshipService.getCompanyApplications(user.id);
+  const fetchCompanyData = async () => {
+    setLoading(true);
+    if (user?.id) {
+      const [jobs, apps, interviews] = await Promise.all([
+        internshipService.getCompanyInternships(user.id).catch(() => []),
+        internshipService.getCompanyApplications(user.id).catch(() => []),
+        internshipService.getCompanyInterviews(user.id).catch(() => [])
+      ]);
 
-        if (jobs && jobs.length > 0) {
-          const active = jobs.filter((j) => j.status === 'active');
-          setActiveJobsCount(active.length);
-        } else {
-          setActiveJobsCount(MOCK_INTERNSHIPS.length);
-        }
-
-        if (apps && apps.length > 0) {
-          setTotalApplicantsCount(apps.length);
-          setInterviewsCount(apps.filter((a) => a.status === 'Interview' || a.status === 'Interview Scheduled').length);
-          setShortlistedCount(apps.filter((a) => a.status === 'Shortlisted').length);
-          setRecentApplications(apps.slice(0, 5));
-          setLoading(false);
-          return;
-        }
+      if (jobs && jobs.length > 0) {
+        const active = jobs.filter((j) => j.status === 'active');
+        setActiveJobsCount(active.length);
+      } else {
+        setActiveJobsCount(MOCK_INTERNSHIPS.length);
       }
+
+      if (apps && apps.length > 0) {
+        setTotalApplicantsCount(apps.length);
+        setShortlistedCount(apps.filter((a) => a.status === 'Shortlisted' || a.status === 'Selected').length);
+        setRecentApplications(apps.slice(0, 5));
+      } else {
+        setTotalApplicantsCount(MOCK_APPLICATIONS.length);
+        setShortlistedCount(2);
+        setRecentApplications(MOCK_APPLICATIONS);
+      }
+
+      setCompanyInterviews(interviews || []);
+      setInterviewsCount(interviews ? interviews.filter(i => i.status === 'Scheduled').length : 1);
+    } else {
       // Fallback
       setActiveJobsCount(MOCK_INTERNSHIPS.length);
       setTotalApplicantsCount(MOCK_APPLICATIONS.length);
       setInterviewsCount(1);
       setShortlistedCount(2);
       setRecentApplications(MOCK_APPLICATIONS);
-      setLoading(false);
-    };
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchCompanyData();
+
+    if (user?.id) {
+      const unsubscribe = internshipService.subscribeToInterviews(user.id, () => {
+        fetchCompanyData();
+      });
+      return () => unsubscribe();
+    }
   }, [user]);
+
+  const handleUpdateStatus = async (interviewId, newStatus, studentId, jobTitle) => {
+    await internshipService.updateInterviewStatus(interviewId, newStatus, studentId, { jobTitle });
+    fetchCompanyData();
+  };
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const filteredInterviews = companyInterviews.filter((item) => {
+    if (interviewFilter === 'today') return item.date === todayStr && item.status === 'Scheduled';
+    if (interviewFilter === 'completed') return item.status === 'Completed' || item.status === 'Cancelled';
+    return item.status === 'Scheduled'; // Default upcoming
+  });
 
   return (
     <DashboardLayout
       title="Recruiter Portal Overview"
-      subtitle="Manage your active internship postings, applicant candidate pipelines, and technical interviews."
+      subtitle="Manage active internship postings, review candidate submissions, and conduct video interviews."
     >
       <div className="space-y-8">
         
@@ -90,12 +121,12 @@ const CompanyDashboard = () => {
               </div>
             </div>
             <p className="text-3xl font-extrabold text-emerald-400">{interviewsCount}</p>
-            <p className="text-xs text-slate-400 mt-1">Scheduled candidate interviews</p>
+            <p className="text-xs text-slate-400 mt-1">Scheduled candidate calls</p>
           </Card>
 
           <Card variant="glass" hoverable={false} className="p-5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-400 uppercase">Hired</span>
+              <span className="text-xs font-semibold text-slate-400 uppercase">Selected Hires</span>
               <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                 <CheckCircle className="w-4 h-4" />
               </div>
@@ -103,6 +134,130 @@ const CompanyDashboard = () => {
             <p className="text-3xl font-extrabold text-emerald-400">{shortlistedCount}</p>
             <p className="text-xs text-slate-400 mt-1">Confirmed intern hires</p>
           </Card>
+        </div>
+
+        {/* Video Interview Scheduler Widget */}
+        <div className="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 backdrop-blur-xl shadow-xl space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Video className="w-5 h-5 text-indigo-400" /> Video Interview Pipeline
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Track live scheduled interviews, open meeting links, and update evaluation statuses.
+              </p>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex items-center space-x-2 bg-slate-800/60 p-1.5 rounded-2xl border border-slate-700/50">
+              <button
+                onClick={() => setInterviewFilter('upcoming')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  interviewFilter === 'upcoming'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => setInterviewFilter('today')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  interviewFilter === 'today'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setInterviewFilter('completed')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  interviewFilter === 'completed'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                History
+              </button>
+            </div>
+          </div>
+
+          {filteredInterviews.length === 0 ? (
+            <div className="p-8 text-center bg-slate-800/30 rounded-2xl border border-slate-700/40 text-slate-400 space-y-2">
+              <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
+              <p className="text-sm font-semibold text-white">No interviews in this section</p>
+              <p className="text-xs text-slate-400">
+                To schedule an interview, navigate to <Link to="/company/applicants" className="text-indigo-400 font-bold hover:underline">Applicants Pipeline</Link> and select "Schedule Interview".
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredInterviews.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-5 rounded-2xl bg-slate-800/40 border border-slate-700/60 shadow-lg space-y-4 flex flex-col justify-between"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 inline-block mb-1">
+                        {item.interviewType || 'Technical Screening'}
+                      </span>
+                      <h4 className="text-white font-bold text-base">{item.studentName}</h4>
+                      <p className="text-xs text-indigo-400 font-semibold">{item.jobTitle}</p>
+                    </div>
+
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {item.date} at {item.time}
+                    </span>
+                  </div>
+
+                  {item.notes && (
+                    <p className="text-xs text-slate-300 bg-slate-900/60 p-2.5 rounded-xl border border-slate-700/50">
+                      📝 <strong className="text-slate-400">Agenda:</strong> {item.notes}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-700/60">
+                    <div className="flex items-center space-x-2">
+                      {item.status === 'Scheduled' && (
+                        <>
+                          <button
+                            onClick={() => handleUpdateStatus(item.id, 'Completed', item.student_id, item.jobTitle)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-[11px] font-bold border border-emerald-500/30 transition-all"
+                          >
+                            Mark Completed
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(item.id, 'Cancelled', item.student_id, item.jobTitle)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-[11px] font-bold border border-rose-500/30 transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                      {item.status !== 'Scheduled' && (
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.status}</span>
+                      )}
+                    </div>
+
+                    {item.meetingLink && (
+                      <a
+                        href={item.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition-all"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Launch Call</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions Bar */}

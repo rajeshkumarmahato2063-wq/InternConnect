@@ -643,6 +643,7 @@ export const internshipService = {
         interview_date: interviewData.date || interviewData.interview_date,
         interview_time: interviewData.time || interviewData.interview_time,
         meeting_link: interviewData.meetingLink || interviewData.meeting_link || 'https://meet.google.com/abc-defg-hij',
+        interview_type: interviewData.interview_type || interviewData.interviewType || 'Technical Screening',
         notes: interviewData.notes || 'Technical Live Code Evaluation',
         status: 'Scheduled',
       };
@@ -650,10 +651,11 @@ export const internshipService = {
       const { data, error } = await supabase.from('interviews').insert([row]).select().single();
 
       // Trigger candidate notification
-      if (interviewData.studentId) {
-        await internshipService.createNotification(interviewData.studentId, {
+      const studentId = interviewData.studentId || interviewData.student_id;
+      if (studentId) {
+        await internshipService.createNotification(studentId, {
           title: '🗓️ Interview Scheduled!',
-          message: `Technical interview scheduled for ${row.interview_date} at ${row.interview_time}.`,
+          message: `Technical interview (${row.interview_type}) scheduled for ${row.interview_date} at ${row.interview_time}.`,
           type: 'interview',
         });
       }
@@ -666,11 +668,12 @@ export const internshipService = {
     const mockInterview = {
       id: `int_${Date.now()}`,
       jobTitle: interviewData.jobTitle || 'Software Engineer Intern',
-      companyName: interviewData.companyName || 'Microsoft',
+      companyName: interviewData.companyName || 'Tech Company',
       date: interviewData.date || '2026-10-15',
       time: interviewData.time || '10:00 AM',
       meetingLink: interviewData.meetingLink || 'https://meet.google.com/abc-defg-hij',
-      interviewer: interviewData.interviewer || 'Senior Staff Engineer',
+      interviewType: interviewData.interview_type || 'Technical Screening',
+      notes: interviewData.notes || 'Technical Live Code Evaluation',
       status: 'Scheduled',
     };
     return mockInterview;
@@ -683,22 +686,24 @@ export const internshipService = {
     try {
       const { data, error } = await supabase
         .from('interviews')
-        .select('*, internships(*)')
+        .select('*, internships(*), company:profiles!company_id(*)')
         .eq('student_id', studentId)
-        .order('created_at', { ascending: false });
+        .order('interview_date', { ascending: true });
 
       if (!error && data && data.length > 0) {
         return data.map((item) => ({
           id: item.id,
           jobId: item.internship_id,
           jobTitle: item.internships?.title || 'Engineering Intern',
-          companyName: item.internships?.company_name || 'Tech Company',
-          companyLogo: item.internships?.company_logo || 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+          companyName: item.company?.full_name || item.internships?.company_name || 'Tech Company',
+          companyLogo: item.company?.avatar_url || item.internships?.company_logo || 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
           date: item.interview_date,
           time: item.interview_time,
           meetingLink: item.meeting_link,
+          interviewType: item.interview_type || 'Technical Screening',
           notes: item.notes,
           status: item.status || 'Scheduled',
+          created_at: item.created_at
         }));
       }
     } catch (err) {
@@ -714,10 +719,99 @@ export const internshipService = {
         date: '2026-10-15',
         time: '10:00 AM IST',
         meetingLink: 'https://meet.google.com/abc-defg-hij',
+        interviewType: 'Technical Screening',
         notes: 'Round 1: React architecture & System Design',
         status: 'Scheduled',
       },
     ];
+  },
+
+  /**
+   * Fetch scheduled interviews for a recruiter company
+   */
+  getCompanyInterviews: async (companyId) => {
+    try {
+      const { data, error } = await supabase
+        .from('interviews')
+        .select('*, internships(*), student:profiles!student_id(*)')
+        .eq('company_id', companyId)
+        .order('interview_date', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        return data.map((item) => ({
+          id: item.id,
+          jobId: item.internship_id,
+          jobTitle: item.internships?.title || 'Engineering Intern',
+          studentName: item.student?.full_name || 'Student Candidate',
+          studentEmail: item.student?.email || 'student@example.com',
+          studentAvatar: item.student?.avatar_url,
+          date: item.interview_date,
+          time: item.interview_time,
+          meetingLink: item.meeting_link,
+          interviewType: item.interview_type || 'Technical Screening',
+          notes: item.notes,
+          status: item.status || 'Scheduled',
+          created_at: item.created_at
+        }));
+      }
+    } catch (err) {
+      console.warn('Supabase fetch company interviews fallback:', err);
+    }
+
+    return [];
+  },
+
+  /**
+   * Update Interview Status (Completed, Cancelled, Scheduled)
+   */
+  updateInterviewStatus: async (interviewId, status, studentId, details = {}) => {
+    try {
+      const { data, error } = await supabase
+        .from('interviews')
+        .update({ status })
+        .eq('id', interviewId)
+        .select()
+        .single();
+
+      if (studentId) {
+        let msg = `Your interview status has been updated to ${status}.`;
+        if (status === 'Cancelled') msg = `Your scheduled interview for ${details.jobTitle || 'internship'} has been cancelled by the recruiter.`;
+        if (status === 'Completed') msg = `Your interview for ${details.jobTitle || 'internship'} has been marked as Completed.`;
+        await internshipService.createNotification(studentId, {
+          title: `🗓️ Interview Update: ${status}`,
+          message: msg,
+          type: status === 'Cancelled' ? 'alert' : 'info'
+        });
+      }
+
+      if (!error && data) return data;
+    } catch (err) {
+      console.warn('Update interview status exception:', err);
+    }
+    return { id: interviewId, status };
+  },
+
+  /**
+   * Realtime subscription for interviews table
+   */
+  subscribeToInterviews: (userId, onInterviewChange) => {
+    if (!userId) return () => {};
+    try {
+      const channel = supabase
+        .channel(`public:interviews:user_${userId}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'interviews' },
+          (payload) => {
+            if (onInterviewChange) onInterviewChange(payload);
+          }
+        )
+        .subscribe();
+      return () => { supabase.removeChannel(channel); };
+    } catch (err) {
+      console.warn('Interviews realtime subscription error:', err);
+      return () => {};
+    }
   },
 
   /**

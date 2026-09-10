@@ -8,6 +8,7 @@ export default function InterviewSchedulerModal({ isOpen, onClose, applicant, on
     interview_date: '',
     interview_time: '',
     meeting_link: '',
+    interview_type: 'Technical Screening',
     notes: ''
   });
   const [submitting, setSubmitting] = useState(false);
@@ -28,11 +29,12 @@ export default function InterviewSchedulerModal({ isOpen, onClose, applicant, on
       setSubmitting(true);
       const payload = {
         internship_id: applicant.internship_id,
-        student_id: applicant.student_id,
+        student_id: applicant.student_id || applicant.studentId,
         company_id: applicant.company_id || applicant.internship?.company_id,
         interview_date: formData.interview_date,
         interview_time: formData.interview_time,
         meeting_link: formData.meeting_link,
+        interview_type: formData.interview_type,
         notes: formData.notes,
         status: 'Scheduled'
       };
@@ -73,9 +75,9 @@ export default function InterviewSchedulerModal({ isOpen, onClose, applicant, on
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
             <div>
-              <h3 className="text-xl font-bold text-white">Schedule Interview</h3>
+              <h3 className="text-xl font-bold text-white">Schedule Video Interview</h3>
               <p className="text-xs text-gray-400 mt-0.5">
-                For candidate <span className="text-indigo-400 font-semibold">{applicant.student?.full_name || 'Student'}</span>
+                Candidate: <span className="text-indigo-400 font-semibold">{applicant.student?.full_name || applicant.studentName || 'Student'}</span>
               </p>
             </div>
             <button
@@ -95,34 +97,53 @@ export default function InterviewSchedulerModal({ isOpen, onClose, applicant, on
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4 mt-5">
-            <div>
-              <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
-                Interview Date
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  value={formData.interview_date}
-                  onChange={(e) => setFormData({ ...formData, interview_date: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                  required
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
+                  Interview Date
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={formData.interview_date}
+                    onChange={(e) => setFormData({ ...formData, interview_date: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
+                  Interview Time
+                </label>
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={formData.interview_time}
+                    onChange={(e) => setFormData({ ...formData, interview_time: e.target.value })}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    required
+                  />
+                </div>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
-                Interview Time
+                Interview Type
               </label>
-              <div className="relative">
-                <input
-                  type="time"
-                  value={formData.interview_time}
-                  onChange={(e) => setFormData({ ...formData, interview_time: e.target.value })}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                  required
-                />
-              </div>
+              <select
+                value={formData.interview_type}
+                onChange={(e) => setFormData({ ...formData, interview_type: e.target.value })}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+              >
+                <option value="Technical Screening">Technical Screening</option>
+                <option value="System Design">System Design & Live Coding</option>
+                <option value="Behavioral Round">Behavioral & Culture Fit</option>
+                <option value="HR Screening">HR Screening</option>
+                <option value="Final Round">Final Executive Round</option>
+              </select>
             </div>
 
             <div>
@@ -147,7 +168,7 @@ export default function InterviewSchedulerModal({ isOpen, onClose, applicant, on
               </label>
               <textarea
                 rows={3}
-                placeholder="Preparation details, technical format, or agenda..."
+                placeholder="Preparation details, format, or agenda..."
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
