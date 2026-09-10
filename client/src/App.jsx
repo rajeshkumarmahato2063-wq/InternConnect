@@ -83,6 +83,7 @@ function App() {
             <Routes>
               {/* Public Landing & Auth Routes */}
               <Route path="/" element={<Home />} />
+              <Route path="/login" element={<AuthRoleSelect />} />
               <Route path="/auth/select-role" element={<AuthRoleSelect />} />
               <Route path="/auth/student/login" element={<StudentLogin />} />
               <Route path="/auth/student/register" element={<StudentRegister />} />

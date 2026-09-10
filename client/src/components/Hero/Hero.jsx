@@ -1,12 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Compass, CheckCircle2, TrendingUp, Zap, Briefcase, Award } from 'lucide-react';
+import { Sparkles, ArrowRight, Compass, CheckCircle2, TrendingUp, Zap, Briefcase, Award, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../Button/Button';
 import Container from '../Container/Container';
 import SearchBar from '../SearchBar/SearchBar';
 import Badge from '../Badge/Badge';
+import { useAuth } from '../../context/AuthContext';
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, role, user } = useAuth();
+  const [navigating, setNavigating] = useState(false);
+
+  const handleGetStarted = (e) => {
+    e.preventDefault();
+    setNavigating(true);
+
+    setTimeout(() => {
+      if (!isAuthenticated) {
+        navigate('/login');
+      } else if (role === 'student' || user?.role === 'student') {
+        navigate('/student/dashboard');
+      } else if (role === 'company' || user?.role === 'company') {
+        navigate('/company/dashboard');
+      } else if (role === 'admin' || user?.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/login');
+      }
+      setNavigating(false);
+    }, 150);
+  };
+
+  const handleExplore = () => {
+    navigate('/explore');
+  };
   return (
     <section id="home" className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
       {/* Background Decorative Blur Orbs */}
@@ -52,17 +81,14 @@ const Hero = () => {
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-10 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-10 w-full sm:w-auto relative z-20">
               <Button
                 variant="primary"
                 size="lg"
                 icon={ArrowRight}
                 iconPosition="right"
-                onClick={() => {
-                  const elem = document.getElementById('categories');
-                  elem?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="w-full sm:w-auto"
+                onClick={handleExplore}
+                className="w-full sm:w-auto shadow-xl shadow-indigo-600/30 active:scale-95 transition-transform"
               >
                 Explore Internships
               </Button>
@@ -70,14 +96,15 @@ const Hero = () => {
               <Button
                 variant="secondary"
                 size="lg"
-                icon={Compass}
-                onClick={() => {
-                  const elem = document.getElementById('features');
-                  elem?.scrollIntoView({ behavior: 'smooth' });
+                icon={navigating ? Loader2 : Compass}
+                onClick={handleGetStarted}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleGetStarted(e);
                 }}
-                className="w-full sm:w-auto"
+                disabled={navigating}
+                className="w-full sm:w-auto z-20 relative cursor-pointer active:scale-95 transition-transform shadow-lg hover:shadow-indigo-500/20 flex items-center justify-center gap-2"
               >
-                Get Started
+                {navigating ? 'Navigating...' : 'Get Started'}
               </Button>
             </div>
 

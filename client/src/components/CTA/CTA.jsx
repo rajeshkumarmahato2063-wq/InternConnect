@@ -1,11 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Rocket } from 'lucide-react';
+import { ArrowRight, Sparkles, Rocket, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Container from '../Container/Container';
 import Button from '../Button/Button';
 import Badge from '../Badge/Badge';
+import { useAuth } from '../../context/AuthContext';
 
 const CTA = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, role, user } = useAuth();
+  const [navigating, setNavigating] = useState(false);
+
+  const handleStartJourney = (e) => {
+    e.preventDefault();
+    setNavigating(true);
+
+    setTimeout(() => {
+      if (!isAuthenticated) {
+        navigate('/login');
+      } else if (role === 'student' || user?.role === 'student') {
+        navigate('/student/dashboard');
+      } else if (role === 'company' || user?.role === 'company') {
+        navigate('/company/dashboard');
+      } else if (role === 'admin' || user?.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/login');
+      }
+      setNavigating(false);
+    }, 150);
+  };
+
   return (
     <section className="py-20 sm:py-28 relative overflow-hidden">
       <Container>
@@ -43,16 +69,20 @@ const CTA = () => {
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto z-20 relative">
               <Button
                 variant="primary"
                 size="lg"
-                icon={ArrowRight}
+                icon={navigating ? Loader2 : ArrowRight}
                 iconPosition="right"
-                onClick={() => alert('Start Your Journey preview - Modal or Signup route')}
-                className="w-full sm:w-auto shadow-2xl shadow-indigo-500/50"
+                onClick={handleStartJourney}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleStartJourney(e);
+                }}
+                disabled={navigating}
+                className="w-full sm:w-auto shadow-2xl shadow-indigo-500/50 active:scale-95 transition-transform"
               >
-                Start Your Journey
+                {navigating ? 'Navigating...' : 'Start Your Journey'}
               </Button>
             </div>
 
