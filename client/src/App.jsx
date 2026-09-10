@@ -18,6 +18,8 @@ const StudentRegister = lazy(() => import('./pages/auth/StudentRegister'));
 const CompanyLogin = lazy(() => import('./pages/auth/CompanyLogin'));
 const CompanyRegister = lazy(() => import('./pages/auth/CompanyRegister'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
+const VerifyEmail = lazy(() => import('./pages/auth/VerifyEmail'));
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 
 // Student & Messaging Pages (Protected)
 const ExploreInternships = lazy(() => import('./pages/Explore'));
@@ -34,6 +36,11 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const SavedJobs = lazy(() => import('./pages/Student/SavedJobs'));
 const ApplicationTracker = lazy(() => import('./pages/Student/ApplicationTracker'));
 const AICareerTools = lazy(() => import('./pages/Student/AICareerTools'));
+const NotificationsPage = lazy(() => import('./pages/Student/NotificationsPage'));
+const PortfolioBuilder = lazy(() => import('./pages/Student/PortfolioBuilder'));
+const PublicPortfolio = lazy(() => import('./pages/PublicPortfolio'));
+const StudentAssessments = lazy(() => import('./pages/Student/StudentAssessments'));
+const TakeAssessmentPortal = lazy(() => import('./pages/Student/TakeAssessmentPortal'));
 
 // Company Pages (Protected)
 const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard'));
@@ -41,6 +48,8 @@ const CompanyProfile = lazy(() => import('./pages/Company/CompanyProfile'));
 const PostInternship = lazy(() => import('./pages/Company/PostInternship'));
 const ManageJobs = lazy(() => import('./pages/Company/ManageJobs'));
 const ApplicantManagement = lazy(() => import('./pages/Company/ApplicantManagement'));
+const CompanyAssessments = lazy(() => import('./pages/Company/CompanyAssessments'));
+
 
 // Admin Pages (Protected)
 const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'));
@@ -74,6 +83,9 @@ function App() {
               <Route path="/auth/company/login" element={<CompanyLogin />} />
               <Route path="/auth/company/register" element={<CompanyRegister />} />
               <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/verify-email" element={<VerifyEmail />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/portfolio/:username" element={<PublicPortfolio />} />
 
               {/* Protected Student Routes */}
               <Route
@@ -180,6 +192,38 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/portfolio"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <PortfolioBuilder />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/assessments"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <StudentAssessments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student/assessment/:id/take"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <TakeAssessmentPortal />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Company Routes */}
               <Route
@@ -222,6 +266,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/company/assessments"
+                element={
+                  <ProtectedRoute allowedRole="company">
+                    <CompanyAssessments />
+                  </ProtectedRoute>
+                }
+              />
+
 
               {/* Protected Admin Routes */}
               <Route

@@ -16,7 +16,8 @@ import {
   Briefcase,
   Users,
   Building2,
-  ShieldCheck
+  ShieldCheck,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -31,6 +32,7 @@ const Sidebar = () => {
   const studentNavItems = [
     { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
     { name: 'Explore Internships', href: '/explore', icon: Search },
+    { name: 'Assessments', href: '/student/assessments', icon: BookOpen },
     { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Profile', href: '/student/profile', icon: User },
@@ -41,8 +43,10 @@ const Sidebar = () => {
     { name: 'Post Internship', href: '/company/post-job', icon: PlusCircle },
     { name: 'Manage Jobs', href: '/company/jobs', icon: Briefcase },
     { name: 'Applicants', href: '/company/applicants', icon: Users },
+    { name: 'Assessments', href: '/company/assessments', icon: BookOpen },
     { name: 'Company Profile', href: '/company/profile', icon: Building2 },
   ];
+
 
   const adminNavItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },

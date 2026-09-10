@@ -74,6 +74,14 @@ export const internshipService = {
     if (filters.minStipend) {
       result = result.filter((j) => j.stipendValue >= Number(filters.minStipend));
     }
+
+    // Verified Companies Priority Sorting (Verified employers appear first)
+    result.sort((a, b) => {
+      if (a.verified && !b.verified) return -1;
+      if (!a.verified && b.verified) return 1;
+      return 0;
+    });
+
     return result;
   },
 

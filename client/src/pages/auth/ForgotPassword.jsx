@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { Mail, CheckCircle2, ArrowLeft } from 'lucide-react';
 import AuthLayout from '../../layouts/AuthLayout';
 import LoadingButton from '../../components/Auth/LoadingButton';
+import { emailService } from '../../services/emailService';
 
 const forgotPasswordSchema = z.object({
   email: z.string().min(1, 'Email address is required').email('Enter a valid email address'),
@@ -13,6 +14,7 @@ const forgotPasswordSchema = z.object({
 
 const ForgotPassword = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [sentEmail, setSentEmail] = useState('');
 
   const {
     register,
@@ -23,14 +25,15 @@ const ForgotPassword = () => {
   });
 
   const onSubmit = async (data) => {
-    await new Promise((resolve) => setTimeout(resolve, 800));
+    setSentEmail(data.email);
+    await emailService.sendPasswordResetEmail(data.email);
     setSubmitted(true);
   };
 
   return (
     <AuthLayout
       title="Reset Your Password"
-      subtitle="Enter your email address and we’ll send you a password recovery link."
+      subtitle="Enter your account email address and we’ll send you a password recovery link."
       backLink="/auth/select-role"
     >
       {submitted ? (
@@ -40,7 +43,7 @@ const ForgotPassword = () => {
           </div>
           <h3 className="text-xl font-bold text-white">Recovery Email Sent!</h3>
           <p className="text-xs text-slate-300 max-w-sm leading-relaxed">
-            If an account exists with that email, password reset instructions have been sent. Please check your inbox.
+            If an account exists with <span className="font-mono text-indigo-300 font-bold">{sentEmail}</span>, password reset instructions have been sent. Please check your inbox.
           </p>
           <Link
             to="/auth/select-role"

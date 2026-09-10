@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Menu, X, Bell, User, LayoutDashboard, Briefcase, FileText, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Sparkles, Menu, X, Bell, User, LayoutDashboard, Briefcase, FileText, LogOut, LogIn, UserPlus, Folder } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../Button/Button';
 import Container from '../Container/Container';
@@ -8,6 +8,7 @@ import RoleSwitcher from '../Common/RoleSwitcher';
 import { useScrollPosition } from '../../hooks/useScrollPosition';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import NotificationBellDropdown from '../Notifications/NotificationBellDropdown';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -33,6 +34,7 @@ const Navbar = () => {
       return [
         { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
         { name: 'Search Internships', href: '/explore', icon: Briefcase },
+        { name: 'Portfolio Builder', href: '/student/portfolio', icon: Folder },
         { name: 'Applications', href: '/applications', icon: FileText },
         { name: 'AI Career Tools', href: '/ai-tools', icon: Sparkles },
         { name: 'My Profile', href: '/student/profile', icon: User },
@@ -109,20 +111,8 @@ const Navbar = () => {
             <div className="hidden md:flex items-center space-x-3">
               {isAuthenticated ? (
                 <>
-                  {/* Notifications Bell */}
-                  <button
-                    type="button"
-                    onClick={toggleDrawer}
-                    className="relative p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 text-slate-300 hover:text-white transition-all"
-                    aria-label="Notifications"
-                  >
-                    <Bell className="w-4 h-4" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-indigo-500 text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </button>
+                  {/* Notifications Bell Dropdown */}
+                  <NotificationBellDropdown />
 
                   {/* User Profile Badge */}
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800">

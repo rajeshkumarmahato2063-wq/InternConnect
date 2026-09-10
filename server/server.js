@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 // Load Environment Variables
@@ -79,8 +80,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Authentication Routes
+// API Authentication & AI Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Centralized Error Handling Middleware
 app.use(errorHandler);

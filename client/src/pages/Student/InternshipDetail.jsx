@@ -1,22 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Calendar, Award, CheckCircle2, Bookmark, ArrowRight, ArrowLeft } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, Award, CheckCircle2, Bookmark, ArrowRight, ArrowLeft, Sparkles, FileText } from 'lucide-react';
 import MainLayout from '../../layouts/MainLayout';
 import Container from '../../components/Container/Container';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import ApplyModal from '../../components/Modals/ApplyModal';
+import ResumeMatchCard from '../../components/AI/ResumeMatchCard';
+import AICoverLetterModal from '../../components/AI/AICoverLetterModal';
 import { apiService } from '../../services/api';
 import { internshipService } from '../../services/internshipService';
 import { useAuth } from '../../context/AuthContext';
 
 const InternshipDetail = () => {
   const { id } = useParams();
-  const { isJobSaved, toggleSaveJob, hasApplied } = useAuth();
+  const { isJobSaved, toggleSaveJob, hasApplied, user, profile } = useAuth();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showCoverLetterModal, setShowCoverLetterModal] = useState(false);
 
   useEffect(() => {
     const loadJob = async () => {
@@ -149,6 +152,9 @@ const InternshipDetail = () => {
                   </div>
                 </div>
               </Card>
+
+              {/* AI Resume Match Card */}
+              <ResumeMatchCard internship={job} studentProfile={profile || user} />
             </div>
 
             {/* Right Action Card */}
@@ -189,6 +195,17 @@ const InternshipDetail = () => {
                   >
                     {saved ? 'Saved in Bookmarks' : 'Save to Bookmarks'}
                   </Button>
+
+                  <Button
+                    variant="secondary"
+                    size="md"
+                    fullWidth
+                    onClick={() => setShowCoverLetterModal(true)}
+                    icon={Sparkles}
+                    className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10 font-bold"
+                  >
+                    Generate AI Cover Letter
+                  </Button>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-xs text-indigo-200">
@@ -207,6 +224,15 @@ const InternshipDetail = () => {
         job={job}
         isOpen={showApplyModal}
         onClose={() => setShowApplyModal(false)}
+      />
+
+      <AICoverLetterModal
+        isOpen={showCoverLetterModal}
+        onClose={() => setShowCoverLetterModal(false)}
+        defaultJobTitle={job.title}
+        defaultCompanyName={job.companyName}
+        defaultSkills={job.skills}
+        internshipId={job.id}
       />
     </MainLayout>
   );
