@@ -427,6 +427,25 @@ export const internshipService = {
   },
 
   /**
+   * Fetch applied job IDs for a student
+   */
+  getUserAppliedJobIds: async (studentId) => {
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('internship_id')
+        .eq('student_id', studentId);
+
+      if (!error && data) {
+        return data.map(app => app.internship_id);
+      }
+    } catch (err) {
+      console.warn('Supabase fetch student applied job IDs fallback:', err);
+    }
+    return MOCK_APPLICATIONS.map(a => a.jobId);
+  },
+
+  /**
    * Fetch applications submitted to a company's internships
    */
   getCompanyApplications: async (companyUserId) => {

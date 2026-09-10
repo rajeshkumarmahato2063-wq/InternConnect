@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
 
   const [savedJobs, setSavedJobs] = useState(['job_1', 'job_5']);
   const [applications, setApplications] = useState(MOCK_APPLICATIONS);
+  const [appliedJobIds, setAppliedJobIds] = useState(() => MOCK_APPLICATIONS.map(a => a.jobId));
 
   // Initialize Supabase Auth session listener
   useEffect(() => {
@@ -183,7 +184,10 @@ export const AuthProvider = ({ children }) => {
 
   const addApplication = (newApp) => {
     setApplications((prev) => [newApp, ...prev]);
+    setAppliedJobIds((prev) => [...prev, newApp.jobId || newApp.internship_id]);
   };
+
+  const hasApplied = (jobId) => appliedJobIds.includes(jobId);
 
   const updateProfileData = async (updatedData) => {
     if (user?.id) {
@@ -228,6 +232,8 @@ export const AuthProvider = ({ children }) => {
         isJobSaved,
         applications,
         addApplication,
+        appliedJobIds,
+        hasApplied,
         updateProfileData,
       }}
     >

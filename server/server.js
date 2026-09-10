@@ -59,7 +59,18 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// API Health Check Route
+// API Root & Health Check Routes
+app.get(['/', '/api'], (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: '🚀 Welcome to InternConnect AI API Backend',
+    endpoints: {
+      health: 'http://localhost:5000/api/health',
+      auth: 'http://localhost:5000/api/auth'
+    }
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
