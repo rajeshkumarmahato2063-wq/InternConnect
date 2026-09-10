@@ -13,16 +13,26 @@ export const internshipService = {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (filters.query) {
-        query = query.ilike('title', `%${filters.query}%`);
+      // Multi-column search query
+      if (filters.query && filters.query.trim() !== '') {
+        const q = filters.query.trim();
+        query = query.or(
+          `title.ilike.%${q}%,company_name.ilike.%${q}%,location.ilike.%${q}%,work_mode.ilike.%${q}%`
+        );
+      }
+
+      // Location filter (handling Remote keyword)
+      if (filters.location && filters.location.trim() !== '') {
+        const loc = filters.location.trim();
+        if (loc.toLowerCase() === 'remote') {
+          query = query.or(`location.ilike.%remote%,work_mode.ilike.%remote%`);
+        } else {
+          query = query.ilike('location', `%${loc}%`);
+        }
       }
 
       if (filters.workMode && filters.workMode !== 'All') {
         query = query.eq('work_mode', filters.workMode);
-      }
-
-      if (filters.location) {
-        query = query.ilike('location', `%${filters.location}%`);
       }
 
       if (filters.minStipend) {
@@ -32,7 +42,7 @@ export const internshipService = {
       const { data, error } = await query;
 
       if (!error && data && data.length > 0) {
-        return data.map((item) => ({
+        let items = data.map((item) => ({
           id: item.id,
           companyId: item.company_id,
           companyName: item.company_name || 'Tech Company',
@@ -52,6 +62,22 @@ export const internshipService = {
           isActive: item.is_active,
           matchScore: 92,
         }));
+
+        // Secondary client-side skill array filter if query matches specific skill
+        if (filters.query && filters.query.trim() !== '') {
+          const q = filters.query.trim().toLowerCase();
+          // Filter if item skills contain query or title/company/location matches
+          items = items.filter(
+            (j) =>
+              j.title.toLowerCase().includes(q) ||
+              j.companyName.toLowerCase().includes(q) ||
+              j.location.toLowerCase().includes(q) ||
+              j.workMode.toLowerCase().includes(q) ||
+              (j.skills && j.skills.some((s) => s.toLowerCase().includes(q)))
+          );
+        }
+
+        return items;
       }
     } catch (err) {
       console.warn('Supabase fetch internships fallback:', err);
@@ -59,18 +85,34 @@ export const internshipService = {
 
     // Client mock data fallback
     let result = [...MOCK_INTERNSHIPS];
-    if (filters.query) {
-      const q = filters.query.toLowerCase();
+
+    if (filters.query && filters.query.trim() !== '') {
+      const q = filters.query.trim().toLowerCase();
       result = result.filter(
         (j) =>
           j.title.toLowerCase().includes(q) ||
           j.companyName.toLowerCase().includes(q) ||
-          j.skills.some((s) => s.toLowerCase().includes(q))
+          j.location.toLowerCase().includes(q) ||
+          j.workMode.toLowerCase().includes(q) ||
+          (j.skills && j.skills.some((s) => s.toLowerCase().includes(q)))
       );
     }
+
+    if (filters.location && filters.location.trim() !== '') {
+      const loc = filters.location.trim().toLowerCase();
+      if (loc === 'remote') {
+        result = result.filter(
+          (j) => j.workMode.toLowerCase() === 'remote' || j.location.toLowerCase().includes('remote')
+        );
+      } else {
+        result = result.filter((j) => j.location.toLowerCase().includes(loc));
+      }
+    }
+
     if (filters.workMode && filters.workMode !== 'All') {
       result = result.filter((j) => j.workMode.toLowerCase() === filters.workMode.toLowerCase());
     }
+
     if (filters.minStipend) {
       result = result.filter((j) => j.stipendValue >= Number(filters.minStipend));
     }

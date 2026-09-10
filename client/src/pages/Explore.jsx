@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, Filter, Sparkles, X, Briefcase, Calendar, DollarSign, Clock, Users, ArrowRight, Share2, CheckCircle2, Bookmark } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import MainLayout from '../layouts/MainLayout';
+import { Search, MapPin, Filter, Sparkles, X, Briefcase, Calendar, DollarSign, Clock, Users, ArrowRight, Share2, CheckCircle2, Bookmark, RefreshCw } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Sidebar from '../components/Dashboard/Sidebar';
 import EmptyState from '../components/Common/EmptyState';
 import LoadingSkeleton from '../components/Common/LoadingSkeleton';
@@ -12,18 +11,24 @@ import ApplyModal from '../components/Modals/ApplyModal';
 import Button from '../components/Button/Button';
 import SaveButton from '../components/Common/SaveButton';
 import SkillChip from '../components/Common/SkillChip';
+import SearchBar from '../components/SearchBar/SearchBar';
 import { useAuth } from '../context/AuthContext';
 import { internshipService } from '../services/internshipService';
 
 const ExploreInternships = () => {
   const { user, isJobSaved, toggleSaveJob, hasApplied } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialQueryParam = searchParams.get('query') || '';
+  const initialLocationParam = searchParams.get('location') || '';
+
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
   const [filters, setFilters] = useState({
-    query: '',
-    location: '',
+    query: initialQueryParam,
+    location: initialLocationParam,
     workMode: 'All',
     minStipend: 0,
     duration: 'All',
@@ -37,36 +42,79 @@ const ExploreInternships = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedApplyJob, setSelectedApplyJob] = useState(null);
 
-  const fetchJobs = async () => {
-    setLoading(true);
-    const data = await internshipService.getInternships(filters);
-    
-    // Sort logic
-    if (sortBy === 'stipend') {
-      data.sort((a, b) => (b.stipendValue || 0) - (a.stipendValue || 0));
-    } else if (sortBy === 'match') {
-      data.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-    }
+  // Sync state with URL params
+  useEffect(() => {
+    const urlQuery = searchParams.get('query') || '';
+    const urlLocation = searchParams.get('location') || '';
+    setFilters((prev) => ({ ...prev, query: urlQuery, location: urlLocation }));
+  }, [searchParams]);
 
-    setJobs(data);
-    if (data.length > 0 && !selectedJob) {
-      setSelectedJob(data[0]);
+  // Fetch internships from Supabase
+  const fetchJobs = useCallback(async (currentFilters = filters) => {
+    setLoading(true);
+    try {
+      const data = await internshipService.getInternships(currentFilters);
+      
+      // Sorting
+      if (sortBy === 'stipend') {
+        data.sort((a, b) => (b.stipendValue || 0) - (a.stipendValue || 0));
+      } else if (sortBy === 'match') {
+        data.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+      }
+
+      setJobs(data);
+      if (data.length > 0) {
+        setSelectedJob((prev) => {
+          if (!prev || !data.some((j) => j.id === prev.id)) return data[0];
+          return prev;
+        });
+      } else {
+        setSelectedJob(null);
+      }
+    } catch (err) {
+      console.error('Error querying Supabase internships:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  }, [sortBy]);
+
+  // Debounced search trigger for typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchJobs(filters);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [filters.query, filters.location, filters.workMode, filters.minStipend, sortBy]);
+
+  // Subscribe to real-time database changes
+  useEffect(() => {
+    const unsubscribe = internshipService.subscribeToInternships(() => fetchJobs(filters));
+    return () => unsubscribe();
+  }, [filters, fetchJobs]);
+
+  const handleSearchExecute = ({ query, location }) => {
+    const newFilters = { ...filters, query, location };
+    setFilters(newFilters);
+    
+    // Update URL Search Params
+    const newParams = new URLSearchParams();
+    if (query) newParams.set('query', query);
+    if (location) newParams.set('location', location);
+    setSearchParams(newParams);
+
+    fetchJobs(newFilters);
   };
 
-  useEffect(() => {
-    fetchJobs();
-    const unsubscribe = internshipService.subscribeToInternships(() => fetchJobs());
-    return () => unsubscribe();
-  }, [filters, sortBy]);
-
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleResetFilters = () => {
-    setFilters({ query: '', location: '', workMode: 'All', minStipend: 0, duration: 'All', deadline: 'All', skills: [] });
+    const reset = { query: '', location: '', workMode: 'All', minStipend: 0, duration: 'All', deadline: 'All', skills: [] };
+    setFilters(reset);
+    setSearchParams(new URLSearchParams());
+    fetchJobs(reset);
   };
 
   const DetailPanel = ({ job }) => {
@@ -85,6 +133,7 @@ const ExploreInternships = () => {
               src={job.companyLogo || job.company_logo} 
               alt={job.companyName} 
               className="w-16 h-16 rounded-2xl object-contain bg-white p-2 shadow-lg shrink-0" 
+              onError={(e) => { e.target.src = 'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg'; }}
             />
             <div>
               <h2 className="text-xl font-extrabold text-white leading-tight mb-1">{job.title}</h2>
@@ -171,35 +220,35 @@ const ExploreInternships = () => {
       <Sidebar />
       
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top Sticky Header */}
-        <header className="shrink-0 p-4 sm:p-6 border-b border-slate-800/80 bg-[#090d16]/80 backdrop-blur-xl z-10 flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex-1 w-full relative">
-            <Search className="w-5 h-5 text-indigo-400 absolute left-4 top-3" />
-            <input
-              type="text"
-              value={filters.query}
-              onChange={(e) => handleFilterChange('query', e.target.value)}
-              placeholder="Search by job title, company, or tech stack..."
-              className="w-full rounded-2xl bg-slate-900 border border-slate-800 pl-12 pr-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-all"
-            />
-          </div>
-          
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button 
-              className="lg:hidden flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700 text-sm font-semibold"
-              onClick={() => setShowMobileFilters(true)}
-            >
-              <Filter className="w-4 h-4 text-indigo-400" /> Filters
-            </button>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full sm:w-auto rounded-2xl bg-slate-900 border border-slate-800 px-4 py-3 text-sm font-semibold text-white focus:outline-none"
-            >
-              <option value="newest">Newest First</option>
-              <option value="stipend">Highest Stipend</option>
-              <option value="match">Best AI Match</option>
-            </select>
+        {/* Top Sticky Header with Search Bar */}
+        <header className="shrink-0 p-4 sm:p-6 border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-xl z-10 space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="w-full flex-1">
+              <SearchBar
+                initialQuery={filters.query}
+                initialLocation={filters.location}
+                onSearch={handleSearchExecute}
+                loading={loading}
+              />
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button 
+                className="lg:hidden flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700 text-sm font-semibold text-white"
+                onClick={() => setShowMobileFilters(true)}
+              >
+                <Filter className="w-4 h-4 text-indigo-400" /> Filters
+              </button>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="rounded-2xl bg-slate-900 border border-slate-800 px-4 py-3 text-sm font-semibold text-white focus:outline-none"
+              >
+                <option value="newest">Newest First</option>
+                <option value="stipend">Highest Stipend</option>
+                <option value="match">Best AI Match</option>
+              </select>
+            </div>
           </div>
         </header>
 
@@ -213,18 +262,32 @@ const ExploreInternships = () => {
           {/* Middle: Job List */}
           <section className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">
-                Found {jobs.length} <span className="text-indigo-400">Internships</span>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                Found <span className="text-indigo-400">{jobs.length}</span> Internships
+                {(filters.query || filters.location) && (
+                  <span className="text-xs text-slate-400 font-normal">
+                    matching "{filters.query || filters.location}"
+                  </span>
+                )}
               </h2>
+
+              {(filters.query || filters.location || filters.workMode !== 'All') && (
+                <button
+                  onClick={handleResetFilters}
+                  className="text-xs font-semibold text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" /> Clear Search Filters
+                </button>
+              )}
             </div>
             
             {loading ? (
               <div className="space-y-4"><LoadingSkeleton count={4} /></div>
             ) : jobs.length === 0 ? (
               <EmptyState 
-                title="No Internships Found" 
-                description="Try adjusting your filters, location, or search keywords." 
-                actionLabel="Clear All Filters" 
+                title="No internships found." 
+                description="Try searching for a different skill, job title, company, or location." 
+                actionLabel="Browse All Internships" 
                 onAction={handleResetFilters} 
               />
             ) : (
@@ -259,7 +322,7 @@ const ExploreInternships = () => {
         </div>
       </main>
 
-      {/* Mobile Details Modal (Slide Up) */}
+      {/* Mobile Details Modal */}
       <AnimatePresence>
         {selectedJob && (
           <div className="lg:hidden">
