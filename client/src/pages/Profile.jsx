@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Phone, GraduationCap, BookOpen, Calendar, Github, Linkedin, Globe, Save, CheckCircle2, X } from 'lucide-react';
-import Sidebar from '../../components/Dashboard/Sidebar';
-import TopBar from '../../components/Dashboard/TopBar';
-import SkillChip from '../../components/Dashboard/SkillChip';
-import ProfileProgressRing from '../../components/Dashboard/ProfileProgressRing';
-import Card from '../../components/Card/Card';
-import Button from '../../components/Button/Button';
-import { useAuth } from '../../context/AuthContext';
+import Sidebar from '../components/Dashboard/Sidebar';
+import TopBar from '../components/Dashboard/TopBar';
+import SkillChip from '../components/Dashboard/SkillChip';
+import ProfileProgressRing from '../components/Dashboard/ProfileProgressRing';
+import Card from '../components/Card/Card';
+import Button from '../components/Button/Button';
+import { useAuth } from '../context/AuthContext';
 
 const StudentProfile = () => {
   const { user, updateProfileData } = useAuth();

@@ -18,15 +18,15 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Sidebar from '../../components/Dashboard/Sidebar';
-import TopBar from '../../components/Dashboard/TopBar';
-import StatCard from '../../components/Dashboard/StatCard';
-import ProfileProgressRing from '../../components/Dashboard/ProfileProgressRing';
-import Card from '../../components/Card/Card';
-import LoadingSkeleton from '../../components/Common/LoadingSkeleton';
-import EmptyState from '../../components/Common/EmptyState';
-import { useAuth } from '../../context/AuthContext';
-import internshipService from '../../services/internshipService';
+import Sidebar from '../components/Dashboard/Sidebar';
+import TopBar from '../components/Dashboard/TopBar';
+import StatCard from '../components/Dashboard/StatCard';
+import ProfileProgressRing from '../components/Dashboard/ProfileProgressRing';
+import Card from '../components/Card/Card';
+import LoadingSkeleton from '../components/Common/LoadingSkeleton';
+import EmptyState from '../components/Common/EmptyState';
+import { useAuth } from '../context/AuthContext';
+import internshipService from '../services/internshipService';
 
 const StudentDashboard = () => {
   const { user, savedJobs, applications: authApplications, refreshApplications } = useAuth();
