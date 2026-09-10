@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const InternshipDetail = () => {
   const { id } = useParams();
-  const { isJobSaved, toggleSaveJob } = useAuth();
+  const { isJobSaved, toggleSaveJob, hasApplied } = useAuth();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
@@ -50,6 +50,7 @@ const InternshipDetail = () => {
   }
 
   const saved = isJobSaved(job.id);
+  const applied = hasApplied(job.id);
 
   return (
     <MainLayout>
@@ -160,15 +161,24 @@ const InternshipDetail = () => {
                 </div>
 
                 <div className="space-y-3 pt-4 border-t border-slate-800">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    fullWidth
-                    onClick={() => setShowApplyModal(true)}
-                    icon={ArrowRight}
-                  >
-                    Apply Now with AI Profile
-                  </Button>
+                  {applied ? (
+                    <button
+                      disabled
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-sm font-bold cursor-not-allowed"
+                    >
+                      <CheckCircle2 className="w-5 h-5" /> Already Applied
+                    </button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      onClick={() => setShowApplyModal(true)}
+                      icon={ArrowRight}
+                    >
+                      Apply Now with AI Profile
+                    </Button>
+                  )}
 
                   <Button
                     variant="secondary"

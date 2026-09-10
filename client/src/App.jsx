@@ -20,10 +20,10 @@ const CompanyRegister = lazy(() => import('./pages/auth/CompanyRegister'));
 const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 
 // Student & Messaging Pages (Protected)
-const ExploreInternships = lazy(() => import('./pages/Student/ExploreInternships'));
+const ExploreInternships = lazy(() => import('./pages/Explore'));
 const InternshipDetail = lazy(() => import('./pages/Student/InternshipDetail'));
-const StudentDashboard = lazy(() => import('./pages/Student/StudentDashboard'));
-const StudentProfile = lazy(() => import('./pages/Student/StudentProfile'));
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+const StudentProfile = lazy(() => import('./pages/Profile'));
 const StudentResume = lazy(() => import('./pages/Student/StudentResume'));
 const StudentInterviews = lazy(() => import('./pages/Student/StudentInterviews'));
 const StudentOffers = lazy(() => import('./pages/Student/StudentOffers'));
@@ -36,7 +36,7 @@ const ApplicationTracker = lazy(() => import('./pages/Student/ApplicationTracker
 const AICareerTools = lazy(() => import('./pages/Student/AICareerTools'));
 
 // Company Pages (Protected)
-const CompanyDashboard = lazy(() => import('./pages/Company/CompanyDashboard'));
+const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard'));
 const CompanyProfile = lazy(() => import('./pages/Company/CompanyProfile'));
 const PostInternship = lazy(() => import('./pages/Company/PostInternship'));
 const ManageJobs = lazy(() => import('./pages/Company/ManageJobs'));
