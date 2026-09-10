@@ -7,6 +7,8 @@ import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import NotificationDrawer from './components/Notifications/NotificationDrawer';
 import AICareerChatbot from './components/AI/AICareerChatbot';
+import ErrorBoundary from './components/Common/ErrorBoundary';
+
 
 // Lazy Loaded Pages for Production Code Splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -350,13 +352,18 @@ function App() {
             </Routes>
           </Suspense>
 
-          {/* Floating UI Extensions */}
-          <NotificationDrawer />
-          <AICareerChatbot />
+          {/* Floating UI Extensions wrapped safely */}
+          <ErrorBoundary>
+            <Suspense fallback={null}>
+              <NotificationDrawer />
+              <AICareerChatbot />
+            </Suspense>
+          </ErrorBoundary>
         </Router>
       </NotificationProvider>
     </AuthProvider>
   );
 }
+
 
 export default App;

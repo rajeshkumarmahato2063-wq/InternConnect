@@ -134,20 +134,24 @@ export const copilotService = {
     // 3. Client Heuristic Fallback
     if (!reply) {
       const query = message.toLowerCase();
+      const skillsArr = Array.isArray(userContext?.skills) ? userContext.skills : ['React', 'JavaScript', 'Git'];
+      const skillsStr = skillsArr.slice(0, 3).join(', ') || 'Software Engineering';
+
       if (query.includes('find') || query.includes('internship') || query.includes('recommend')) {
-        reply = `⚡ **Personalized Internship Recommendations for ${userContext.name}:**\n\n1. **Full-Stack Engineering Intern** at *TechCorp*\n   - Stipend: ₹45,000/month • Match Reason: Fits your skills (${userContext.skills.slice(0, 2).join(', ') || 'React, JS'}).\n2. **Frontend Systems Intern** at *Nexus Cloud*\n   - Stipend: ₹40,000/month • Match Reason: Highly rated web engineering role.\n3. **Software Developer Intern** at *Google*\n   - Stipend: ₹75,000/month • Match Reason: Matches your ${userContext.degree || 'Computer Science'} background.`;
+        reply = `⚡ **Personalized Internship Recommendations for ${userContext?.name || 'Candidate'}:**\n\n1. **Full-Stack Engineering Intern** at *TechCorp*\n   - Stipend: ₹45,000/month • Match Reason: Fits your skills (${skillsStr}).\n2. **Frontend Systems Intern** at *Nexus Cloud*\n   - Stipend: ₹40,000/month • Match Reason: Highly rated web engineering role.\n3. **Software Developer Intern** at *Google*\n   - Stipend: ₹75,000/month • Match Reason: Matches your ${userContext?.degree || 'Computer Science'} background.`;
       } else if (query.includes('resume') || query.includes('review') || query.includes('ats')) {
-        reply = `📄 **AI Resume Review for ${userContext.name}:**\n\n- **ATS Match Score:** 92%\n- **Top Strengths:** Clean formatting, strong foundation in ${userContext.skills.slice(0, 3).join(', ') || 'Web Tech'}.\n- **Suggested Enhancements:** Add quantifiable impact metrics to your top project bullet points (e.g. "Reduced REST API response latency by 40%").`;
+        reply = `📄 **AI Resume Review for ${userContext?.name || 'Candidate'}:**\n\n- **ATS Match Score:** 92%\n- **Top Strengths:** Clean formatting, strong foundation in ${skillsStr}.\n- **Suggested Enhancements:** Add quantifiable impact metrics to your top project bullet points (e.g. "Reduced REST API response latency by 40%").`;
       } else if (query.includes('cover letter') || query.includes('letter')) {
-        reply = `✉️ **Personalized Cover Letter Snippet:**\n\nDear Hiring Manager,\nI am writing to express my enthusiastic interest in the Software Engineering Internship position. As a student at ${userContext.college || 'University'}, my hands-on background in ${userContext.skills.join(', ') || 'software engineering'} directly aligns with your requirements.`;
+        reply = `✉️ **Personalized Cover Letter Snippet:**\n\nDear Hiring Manager,\nI am writing to express my enthusiastic interest in the Software Engineering Internship position. As a student at ${userContext?.college || 'University'}, my hands-on background in ${skillsStr} directly aligns with your requirements.`;
       } else if (query.includes('interview') || query.includes('prep') || query.includes('question')) {
-        reply = `🎙️ **Targeted Technical Interview Questions for ${userContext.name}:**\n\n1. **React State & Effects:** How do custom hooks encapsulate stateful logic without duplicating component code?\n2. **Database System Design:** How do indexes accelerate SELECT queries, and what is the trade-off during INSERTs?\n3. **Behavioral STAR Scenario:** Describe a situation where you resolved a technical disagreement with a teammate.`;
+        reply = `🎙️ **Targeted Technical Interview Questions for ${userContext?.name || 'Candidate'}:**\n\n1. **React State & Effects:** How do custom hooks encapsulate stateful logic without duplicating component code?\n2. **Database System Design:** How do indexes accelerate SELECT queries, and what is the trade-off during INSERTs?\n3. **Behavioral STAR Scenario:** Describe a situation where you resolved a technical disagreement with a teammate.`;
       } else if (query.includes('roadmap') || query.includes('career') || query.includes('learn')) {
-        reply = `🗺️ **Customized 6-Month Career Roadmap for ${userContext.name}:**\n\n- **Month 1:** Master Advanced React patterns, Custom Hooks & Tailwind CSS\n- **Month 2:** Build Node.js & Supabase RLS backend REST APIs\n- **Month 3:** Containerize applications using Docker & GitHub Actions CI/CD\n- **Month 4-6:** Technical interview prep & mock interviews`;
+        reply = `🗺️ **Customized 6-Month Career Roadmap for ${userContext?.name || 'Candidate'}:**\n\n- **Month 1:** Master Advanced React patterns, Custom Hooks & Tailwind CSS\n- **Month 2:** Build Node.js & Supabase RLS backend REST APIs\n- **Month 3:** Containerize applications using Docker & GitHub Actions CI/CD\n- **Month 4-6:** Technical interview prep & mock interviews`;
       } else {
-        reply = `Hello ${userContext.name}! I am your InternConnect AI Copilot. Ask me to recommend internships based on your profile, review your resume, generate a cover letter, prepare for technical interviews, or outline a career roadmap.`;
+        reply = `Hello ${userContext?.name || 'Candidate'}! I am your InternConnect AI Copilot. Ask me to recommend internships based on your profile, review your resume, generate a cover letter, prepare for technical interviews, or outline a career roadmap.`;
       }
     }
+
 
     // Persist into Supabase ai_conversations table
     if (userId && reply) {
