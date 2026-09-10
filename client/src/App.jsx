@@ -38,9 +38,11 @@ const ApplicationTracker = lazy(() => import('./pages/Student/ApplicationTracker
 const AICareerTools = lazy(() => import('./pages/Student/AICareerTools'));
 const NotificationsPage = lazy(() => import('./pages/Student/NotificationsPage'));
 const PortfolioBuilder = lazy(() => import('./pages/Student/PortfolioBuilder'));
-const PublicPortfolio = lazy(() => import('./pages/PublicPortfolio'));
 const StudentAssessments = lazy(() => import('./pages/Student/StudentAssessments'));
 const TakeAssessmentPortal = lazy(() => import('./pages/Student/TakeAssessmentPortal'));
+const SkillHub = lazy(() => import('./pages/Student/SkillHub'));
+const TakeChallengePortal = lazy(() => import('./pages/Student/TakeChallengePortal'));
+
 
 // Company Pages (Protected)
 const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard'));
@@ -224,6 +226,23 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/skill-hub"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <SkillHub />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/skill-challenge/:id"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <TakeChallengePortal />
+                  </ProtectedRoute>
+                }
+              />
+
 
               {/* Protected Company Routes */}
               <Route

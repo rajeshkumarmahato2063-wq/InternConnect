@@ -32,11 +32,13 @@ const Sidebar = () => {
   const studentNavItems = [
     { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
     { name: 'Explore Internships', href: '/explore', icon: Search },
+    { name: 'Skill Hub', href: '/skill-hub', icon: ShieldCheck },
     { name: 'Assessments', href: '/student/assessments', icon: BookOpen },
     { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Profile', href: '/student/profile', icon: User },
   ];
+
 
   const companyNavItems = [
     { name: 'Dashboard', href: '/company/dashboard', icon: LayoutDashboard },

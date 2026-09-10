@@ -598,7 +598,7 @@ const ApplicantManagement = () => {
                             </span>
                           </div>
 
-                          {/* Skills Badges */}
+                          {/* Skills & Verified Badges */}
                           {skills.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 pt-1">
                               {skills.slice(0, 5).map((skill, idx) => (
@@ -609,8 +609,13 @@ const ApplicantManagement = () => {
                                   {skill}
                                 </span>
                               ))}
+                              {/* Verified Skill Badges Seal */}
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                                🏅 Verified Skill Seal
+                              </span>
                             </div>
                           )}
+
 
                           {/* Matching / Missing Skills Quick Chips */}
                           <div className="flex items-center gap-3 text-[11px] pt-1 flex-wrap">

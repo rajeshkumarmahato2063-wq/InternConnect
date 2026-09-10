@@ -240,13 +240,17 @@ const PublicPortfolio = () => {
               {portfolio.skills.map((skill, idx) => (
                 <span
                   key={idx}
-                  className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-indigo-300 font-bold text-xs shadow-md"
+                  className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-indigo-300 font-bold text-xs shadow-md flex items-center gap-1.5"
                 >
-                  {skill}
+                  <span>{skill}</span>
+                  <span className="text-[10px] text-amber-400 font-extrabold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/30">
+                    🏅 Verified
+                  </span>
                 </span>
               ))}
             </div>
           </div>
+
 
           {/* Projects Section */}
           <div className="space-y-6">

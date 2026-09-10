@@ -485,9 +485,85 @@ Provide a supportive 2-sentence feedback message encouraging their growth and de
     const missingStr = missingSkills.length > 0 ? missingSkills.join(' and ') : 'additional backend stack technologies';
     const feedback = `You matched ${matchScore}%. Learning ${missingStr} and completing hands-on project implementations will significantly strengthen your future application profile.`;
 
-    return res.status(200).json({ success: true, feedback });
+// AI Skill Verification Roadmap & Diagnostic Engine using Gemini API
+export const analyzeSkillRoadmap = async (req, res) => {
+  try {
+    const {
+      studentName = 'Candidate',
+      challengeTitle = 'JavaScript Skill Verification',
+      score = 65,
+      passed = false,
+      missedTopics = ['Async/Await', 'Closures', 'Prototypes'],
+    } = req.body;
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY') {
+      try {
+        const prompt = `Act as an expert Senior Technical Mentor. Analyze student skill performance on the challenge "${challengeTitle}".
+Candidate Score: ${score}% (Passed: ${passed})
+Identified Weak Topics: ${JSON.stringify(missedTopics)}
+
+OUTPUT FORMAT:
+Respond ONLY with a valid JSON object matching this schema:
+{
+  "summary": "<1-2 sentence constructive performance summary>",
+  "practiceSuggestions": [<array of 3 actionable practice tips>],
+  "roadmap": [<array of 3 step-by-step roadmap items for skill mastery>]
+}`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const geminiRes = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { response_mime_type: 'application/json', temperature: 0.3 },
+          }),
+        });
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const jsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (jsonText) {
+            const parsed = JSON.parse(jsonText);
+            return res.status(200).json({
+              success: true,
+              source: 'gemini-1.5-flash',
+              data: parsed,
+            });
+          }
+        }
+      } catch (geminiErr) {
+        console.warn('Gemini skill roadmap API warning:', geminiErr.message);
+      }
+    }
+
+    // Heuristic AI Fallback
+    const summary = passed
+      ? `Great work! You scored ${score}% on ${challengeTitle}. Focus on optimizing complex edge cases to achieve expert proficiency.`
+      : `You scored ${score}% on ${challengeTitle}. Strengthening key core concepts will help you earn your verified skill badge on your next attempt.`;
+
+    const practiceSuggestions = [
+      `Practice hands-on implementations for ${missedTopics[0] || 'core concepts'}.`,
+      'Build a mini-project applying these principles in real-world scenarios.',
+      'Review official documentation and standard algorithm patterns.',
+    ];
+
+    const roadmap = [
+      `Phase 1: Master fundamentals of ${missedTopics.slice(0, 2).join(' & ')}.`,
+      'Phase 2: Solve 10 medium-difficulty coding challenges.',
+      'Phase 3: Retake the verification test to earn your verified badge.',
+    ];
+
+    return res.status(200).json({
+      success: true,
+      source: 'ai-engine-heuristic',
+      data: { summary, practiceSuggestions, roadmap },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 

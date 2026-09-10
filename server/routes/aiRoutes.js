@@ -5,6 +5,7 @@ import {
   processCopilotChat,
   analyzeApplicantForRecruiter,
   generateRejectionFeedback,
+  analyzeSkillRoadmap,
 } from '../controllers/aiController.js';
 
 const router = express.Router();
@@ -24,5 +25,9 @@ router.post('/recruiter-analyze', analyzeApplicantForRecruiter);
 // POST /api/ai/rejection-feedback
 router.post('/rejection-feedback', generateRejectionFeedback);
 
+// POST /api/ai/skill-roadmap
+router.post('/skill-roadmap', analyzeSkillRoadmap);
+
 export default router;
+
 
