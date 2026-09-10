@@ -481,7 +481,7 @@ export const internshipService = {
   /**
    * Update Application Status (Recruiter / Company role)
    */
-  updateApplicationStatus: async (appId, status) => {
+  updateApplicationStatus: async (appId, status, studentId = null, jobTitle = 'Internship') => {
     try {
       const { data, error } = await supabase
         .from('applications')
@@ -489,9 +489,27 @@ export const internshipService = {
         .eq('id', appId)
         .select();
 
-      if (!error && data) return data[0];
+      if (!error && data && data.length > 0) {
+        const app = data[0];
+        const sId = studentId || app.student_id;
+        if (sId) {
+          const statusMessages = {
+            'Reviewing': `Your application for ${jobTitle} is now under active review.`,
+            'Shortlisted': `🎉 Congratulations! You have been shortlisted for ${jobTitle}.`,
+            'Interview Scheduled': `🗓️ Technical interview has been scheduled for ${jobTitle}.`,
+            'Selected': `🚀 Congratulations! You have been selected for ${jobTitle}!`,
+            'Rejected': `Update on your application for ${jobTitle}.`
+          };
+          await internshipService.createNotification(sId, {
+            title: `Application Status Updated: ${status}`,
+            message: statusMessages[status] || `Your application status for ${jobTitle} was updated to ${status}.`,
+            type: status === 'Selected' ? 'success' : status === 'Shortlisted' ? 'info' : 'update'
+          });
+        }
+        return app;
+      }
     } catch (err) {
-      // ignore
+      console.warn('Supabase status update fallback:', err);
     }
 
     const app = MOCK_APPLICATIONS.find((a) => a.id === appId);

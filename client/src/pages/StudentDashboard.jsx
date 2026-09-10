@@ -1,6 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Bookmark, Calendar, Award, Sparkles, ArrowRight, UserCheck, Activity, Bell, FileText, CheckCircle2, RefreshCw } from 'lucide-react';
+import {
+  Briefcase,
+  Bookmark,
+  Calendar,
+  Award,
+  Sparkles,
+  ArrowRight,
+  UserCheck,
+  Activity,
+  Bell,
+  FileText,
+  CheckCircle2,
+  Video,
+  ExternalLink,
+  Clock,
+  ChevronRight
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../../components/Dashboard/Sidebar';
 import TopBar from '../../components/Dashboard/TopBar';
@@ -13,35 +29,50 @@ import { useAuth } from '../../context/AuthContext';
 import internshipService from '../../services/internshipService';
 
 const StudentDashboard = () => {
-  const { user, savedJobs, applications } = useAuth();
+  const { user, savedJobs, applications: authApplications, refreshApplications } = useAuth();
   const [profile, setProfile] = useState(null);
   const [internships, setInternships] = useState([]);
+  const [userApps, setUserApps] = useState([]);
+  const [upcomingInterviews, setUpcomingInterviews] = useState([]);
   const [recentNotifications, setRecentNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [user]);
 
   const fetchDashboardData = async () => {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const [profileData, jobsData, notifsData] = await Promise.all([
+      const [profileData, jobsData, notifsData, appsData, interviewsData] = await Promise.all([
         internshipService.getProfile(user.id).catch(() => null),
         internshipService.getInternships().catch(() => []),
         internshipService.getUserNotifications(user.id).catch(() => []),
+        internshipService.getUserApplications(user.id).catch(() => []),
+        internshipService.getStudentInterviews(user.id).catch(() => [])
       ]);
 
       if (profileData) setProfile(profileData);
       setInternships(jobsData || []);
       setRecentNotifications(notifsData || []);
+      setUserApps(appsData && appsData.length > 0 ? appsData : authApplications || []);
+      setUpcomingInterviews(interviewsData || []);
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+
+    // Setup Supabase Realtime Listener for instant status updates
+    if (user?.id) {
+      const unsubscribe = internshipService.subscribeToApplications(user.id, () => {
+        fetchDashboardData();
+        if (refreshApplications) refreshApplications();
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const calculatedCompletion = profile ? (
     (profile.resume_url ? 25 : 0) +
@@ -51,8 +82,27 @@ const StudentDashboard = () => {
     (profile.portfolio ? 20 : 0)
   ) : 80;
 
-  const interviewCallsCount = applications.filter((a) => a.interviewDetails || a.status === 'Interview').length;
+  const currentApps = userApps.length > 0 ? userApps : authApplications;
+  const interviewCallsCount = currentApps.filter((a) => a.interviewDetails || a.status === 'Interview Scheduled' || a.status === 'Interview').length;
   const recommendedJobs = internships.slice(0, 3);
+
+  const getStatusBadgeStyle = (status) => {
+    switch (status) {
+      case 'Selected':
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+      case 'Interview Scheduled':
+      case 'Interview':
+        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
+      case 'Shortlisted':
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+      case 'Reviewing':
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+      case 'Rejected':
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      default:
+        return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col lg:flex-row">
@@ -74,13 +124,13 @@ const StudentDashboard = () => {
 
             <div className="space-y-2 relative z-10">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 inline-flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Authenticated Supabase Session
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Supabase Realtime Connected
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
                 Welcome back, {profile?.full_name || user?.name || 'Student Candidate'}! 👋
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                Track your active job applications, optimize your ATS resume score, and join live technical interview calls.
+                Track real-time application status updates, join scheduled technical interviews, and apply for top tech internships.
               </p>
             </div>
 
@@ -115,7 +165,7 @@ const StudentDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Applied Jobs"
-              value={applications.length}
+              value={currentApps.length}
               icon={Briefcase}
               color="indigo"
               subtitle="Active job submissions"
@@ -129,7 +179,7 @@ const StudentDashboard = () => {
             />
             <StatCard
               title="Interview Calls"
-              value={interviewCallsCount}
+              value={interviewCallsCount || upcomingInterviews.length}
               icon={Calendar}
               color="emerald"
               subtitle="Scheduled technical calls"
@@ -142,6 +192,59 @@ const StudentDashboard = () => {
               subtitle="Supabase ATS Profile score"
             />
           </div>
+
+          {/* Upcoming Scheduled Technical Interviews */}
+          {upcomingInterviews.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-emerald-400" /> Upcoming Technical Interviews
+                </h3>
+                <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">
+                  {upcomingInterviews.length} Scheduled
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {upcomingInterviews.map((int) => (
+                  <div
+                    key={int.id}
+                    className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-emerald-500/30 shadow-xl flex flex-col justify-between space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="text-white font-bold text-base">{int.jobTitle}</h4>
+                        <p className="text-xs text-slate-300 font-semibold">{int.companyName}</p>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> {int.date} at {int.time}
+                      </span>
+                    </div>
+
+                    {int.notes && (
+                      <p className="text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
+                        💬 <strong className="text-slate-300">Recruiter Notes:</strong> {int.notes}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                      <span className="text-[11px] text-slate-500">Live Video Evaluation</span>
+                      <a
+                        href={int.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition-colors"
+                      >
+                        <Video className="w-3.5 h-3.5" />
+                        <span>Join Meeting</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Profile Completion Circular Progress Ring */}
           <ProfileProgressRing profile={profile} percentage={calculatedCompletion} />
@@ -164,7 +267,7 @@ const StudentDashboard = () => {
                 title="No Internships Found"
                 description="Check back soon for new active tech internship postings from verified hiring managers."
                 actionLabel="Browse All Opportunities"
-                onAction={() => window.location.href = '/explore'}
+                onAction={() => (window.location.href = '/explore')}
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -199,23 +302,35 @@ const StudentDashboard = () => {
 
           {/* Recent Activity & Notifications Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
-            {/* Recent Application Activity */}
+            {/* Live Applications Status Cards */}
             <div className="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 backdrop-blur-xl shadow-xl space-y-4">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Activity className="w-4 h-4 text-indigo-400" /> Recent Application Activity
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-indigo-400" /> Active Application Statuses
+                </h3>
+                <Link to="/applications" className="text-xs font-semibold text-indigo-400 hover:underline flex items-center gap-1">
+                  Tracker <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
 
-              {applications.length === 0 ? (
+              {currentApps.length === 0 ? (
                 <p className="text-xs text-slate-400 py-4">No recent job applications submitted yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {applications.slice(0, 3).map((app, idx) => (
-                    <div key={app.id || idx} className="p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-between text-xs">
-                      <div>
+                  {currentApps.slice(0, 4).map((app, idx) => (
+                    <div
+                      key={app.id || idx}
+                      className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex items-center justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
                         <p className="font-bold text-white">{app.jobTitle || 'Engineering Role'}</p>
                         <p className="text-[11px] text-slate-400">{app.companyName || 'Tech Partner'}</p>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeStyle(
+                          app.status
+                        )}`}
+                      >
                         {app.status || 'Applied'}
                       </span>
                     </div>
@@ -224,10 +339,10 @@ const StudentDashboard = () => {
               )}
             </div>
 
-            {/* Recent Supabase Notifications */}
+            {/* Recent Notifications */}
             <div className="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 backdrop-blur-xl shadow-xl space-y-4">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Bell className="w-4 h-4 text-purple-400" /> System Notifications
+                <Bell className="w-4 h-4 text-purple-400" /> Real-time System Updates
               </h3>
 
               {recentNotifications.length === 0 ? (
@@ -235,16 +350,19 @@ const StudentDashboard = () => {
                   <div className="p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex items-start space-x-3 text-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-white">Authenticated Session Active</p>
-                      <p className="text-[11px] text-slate-400">Welcome to your InternConnect AI student workspace.</p>
+                      <p className="font-bold text-white">Supabase Realtime Active</p>
+                      <p className="text-[11px] text-slate-400">Status updates will automatically refresh in real-time.</p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recentNotifications.slice(0, 3).map((notif, idx) => (
+                  {recentNotifications.slice(0, 4).map((notif, idx) => (
                     <div key={notif.id || idx} className="p-3.5 rounded-2xl bg-slate-800/40 border border-slate-700/50 text-xs space-y-1">
-                      <p className="font-bold text-white">{notif.title}</p>
+                      <p className="font-bold text-white flex items-center justify-between">
+                        <span>{notif.title}</span>
+                        <span className="text-[10px] text-slate-500 font-normal">Just now</span>
+                      </p>
                       <p className="text-[11px] text-slate-400">{notif.message}</p>
                     </div>
                   ))}
@@ -259,4 +377,3 @@ const StudentDashboard = () => {
 };
 
 export default StudentDashboard;
-

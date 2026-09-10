@@ -12,6 +12,11 @@ import {
   Sparkles,
   Menu,
   X,
+  PlusCircle,
+  Briefcase,
+  Users,
+  Building2,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -23,13 +28,34 @@ const Sidebar = () => {
   const { toggleDrawer, unreadCount } = useNotifications();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = [
+  const studentNavItems = [
     { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
-    { name: 'Search Internships', href: '/explore', icon: Search },
+    { name: 'Explore Internships', href: '/explore', icon: Search },
     { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
     { name: 'Applications', href: '/applications', icon: FileText },
     { name: 'Profile', href: '/student/profile', icon: User },
   ];
+
+  const companyNavItems = [
+    { name: 'Dashboard', href: '/company/dashboard', icon: LayoutDashboard },
+    { name: 'Post Internship', href: '/company/post-job', icon: PlusCircle },
+    { name: 'Manage Jobs', href: '/company/jobs', icon: Briefcase },
+    { name: 'Applicants', href: '/company/applicants', icon: Users },
+    { name: 'Company Profile', href: '/company/profile', icon: Building2 },
+  ];
+
+  const adminNavItems = [
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Verification', href: '/admin/verification', icon: ShieldCheck },
+    { name: 'User Management', href: '/admin/users', icon: Users },
+  ];
+
+  const navItems =
+    currentRole === 'company'
+      ? companyNavItems
+      : currentRole === 'admin'
+      ? adminNavItems
+      : studentNavItems;
 
   const handleLogout = () => {
     logout();
@@ -110,7 +136,11 @@ const Sidebar = () => {
       <aside className="hidden lg:flex flex-col justify-between w-64 shrink-0 bg-slate-900/70 backdrop-blur-xl border-r border-slate-800/80 min-h-[calc(100vh-80px)] p-5">
         <div className="space-y-6">
           <span className="px-3 text-[11px] uppercase tracking-wider text-slate-400 font-extrabold block">
-            Candidate Navigation
+            {currentRole === 'company'
+              ? 'Recruiter Navigation'
+              : currentRole === 'admin'
+              ? 'Admin Portal'
+              : 'Candidate Navigation'}
           </span>
 
           <nav className="space-y-1.5">
@@ -149,8 +179,10 @@ const Sidebar = () => {
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-white truncate">{user?.name || 'Aarav Sharma'}</p>
-              <p className="text-[10px] text-indigo-400 font-semibold truncate">Student Candidate</p>
+              <p className="text-xs font-bold text-white truncate">{user?.name || 'User Account'}</p>
+              <p className="text-[10px] text-indigo-400 font-semibold truncate capitalize">
+                {currentRole || 'Student Candidate'}
+              </p>
             </div>
           </div>
 

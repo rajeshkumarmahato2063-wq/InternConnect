@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Users, Calendar, CheckCircle, Plus, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import DashboardLayout from '../../layouts/DashboardLayout';
-import Card from '../../components/Card/Card';
-import Button from '../../components/Button/Button';
-import { useAuth } from '../../context/AuthContext';
-import { internshipService } from '../../services/internshipService';
-import { MOCK_INTERNSHIPS, MOCK_APPLICATIONS } from '../../services/mockData';
+import DashboardLayout from '../layouts/DashboardLayout';
+import Card from '../components/Card/Card';
+import Button from '../components/Button/Button';
+import { useAuth } from '../context/AuthContext';
+import { internshipService } from '../services/internshipService';
+import { MOCK_INTERNSHIPS, MOCK_APPLICATIONS } from '../services/mockData';
 
 const CompanyDashboard = () => {
   const { user } = useAuth();

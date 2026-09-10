@@ -39,9 +39,14 @@ export default function InterviewSchedulerModal({ isOpen, onClose, applicant, on
 
       await internshipService.scheduleInterview(payload);
       
-      // Optionally update status to 'Interview'
+      // Update status to 'Interview Scheduled'
       if (applicant.id) {
-        await internshipService.updateApplicationStatus(applicant.id, 'Interview');
+        await internshipService.updateApplicationStatus(
+          applicant.id,
+          'Interview Scheduled',
+          applicant.student_id || applicant.studentId,
+          applicant.jobTitle || applicant.internship?.title || 'Internship'
+        );
       }
 
       if (onInterviewScheduled) {
