@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Compass, CheckCircle2, TrendingUp, Zap, Briefcase, Award, Loader2 } from 'lucide-react';
+import { Sparkles, ArrowRight, Compass, CheckCircle2, TrendingUp, Zap, Briefcase, Award, Loader2, X, Send, Bot, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../Button/Button';
 import Container from '../Container/Container';
@@ -12,29 +12,85 @@ const Hero = () => {
   const navigate = useNavigate();
   const { isAuthenticated, role, user } = useAuth();
   const [navigating, setNavigating] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 'welcome',
+      sender: 'ai',
+      text: 'Hello! I am your AI Internship Assistant. Ask me anything about internship discovery, resume optimization, or career guidance!',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendQuery = async (e) => {
+    if (e) e.preventDefault();
+    if (!inputMessage.trim() || isSending) return;
+
+    const query = inputMessage.trim();
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const userMsg = {
+      id: `user_${Date.now()}`,
+      sender: 'user',
+      text: query,
+      timestamp,
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setInputMessage('');
+    setIsSending(true);
+
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: query }),
+      });
+
+      let reply = '';
+      if (response.ok) {
+        const data = await response.json();
+        reply = data.reply || data.text || 'I have processed your request!';
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        reply = errData.error || 'Sorry, I encountered an issue reaching the Gemini API. Please try again.';
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai_${Date.now()}`,
+          sender: 'ai',
+          text: reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } catch (err) {
+      console.error('Chat error:', err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err_${Date.now()}`,
+          sender: 'ai',
+          isError: true,
+          text: '⚠️ Unable to connect to AI server. Please make sure backend is running or check your connection.',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleGetStarted = (e) => {
-    e.preventDefault();
-    setNavigating(true);
-
-    setTimeout(() => {
-      if (!isAuthenticated) {
-        navigate('/login');
-      } else if (role === 'student' || user?.role === 'student') {
-        navigate('/student/dashboard');
-      } else if (role === 'company' || user?.role === 'company') {
-        navigate('/company/dashboard');
-      } else if (role === 'admin' || user?.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/login');
-      }
-      setNavigating(false);
-    }, 150);
+    if (e) e.preventDefault();
+    setIsChatOpen(true);
   };
 
   const handleExplore = () => {
-    navigate('/explore');
+    setIsChatOpen(true);
   };
   return (
     <section id="home" className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
@@ -234,6 +290,112 @@ const Hero = () => {
           <SearchBar />
         </motion.div>
       </Container>
+
+      {/* Modal / Drawer Chat Window */}
+      {isChatOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="w-full max-w-lg h-[600px] bg-slate-900 border border-violet-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+          >
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-violet-600 via-indigo-600 to-purple-600 p-0.5 flex items-center justify-center text-white shadow-lg">
+                  <Sparkles className="w-5 h-5 text-violet-200 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    AI Career Assistant
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  </h3>
+                  <p className="text-xs text-violet-300">Powered by Gemini AI Engine</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-violet-600/30 text-slate-400 hover:text-white flex items-center justify-center transition-colors text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Message List */}
+            <div className="flex-1 p-5 overflow-y-auto space-y-4 scrollbar-thin">
+              {messages.map((msg) => {
+                const isUser = msg.sender === 'user';
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-2xl flex items-center justify-center shrink-0 text-xs font-bold ${
+                        isUser
+                          ? 'bg-gradient-to-tr from-violet-600 to-indigo-600 text-white'
+                          : 'bg-violet-950/80 text-violet-300 border border-violet-500/30'
+                      }`}
+                    >
+                      {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-violet-400" />}
+                    </div>
+
+                    <div className={`space-y-1 max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
+                      <div
+                        className={`p-4 rounded-2xl text-xs leading-relaxed ${
+                          isUser
+                            ? 'bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 text-white font-medium shadow-md'
+                            : msg.isError
+                            ? 'bg-rose-950/70 border border-rose-800 text-rose-200 shadow-md'
+                            : 'bg-slate-950/80 border border-slate-800 text-slate-200 shadow-md'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      </div>
+                      <span className="text-[10px] text-slate-500 px-1 block text-right">
+                        {msg.timestamp}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {isSending && (
+                <div className="flex items-center gap-2 text-violet-400 text-xs p-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+                  <span className="text-xs text-slate-400 animate-pulse font-medium">
+                    AI Assistant is thinking...
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={handleSendQuery}
+              className="p-4 bg-slate-950/90 border-t border-slate-800 flex items-center gap-3"
+            >
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                disabled={isSending}
+                placeholder={isSending ? 'Waiting for response...' : 'Ask about internships, resume tips, or skills...'}
+                className="flex-1 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-2xl px-4 py-3 text-xs text-white placeholder:text-slate-500 focus:outline-none transition-colors disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={!inputMessage.trim() || isSending}
+                className="p-3 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white disabled:opacity-50 transition-all shadow-lg shrink-0 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </button>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </section>
   );
 };
