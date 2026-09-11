@@ -6,6 +6,7 @@ import {
   analyzeApplicantForRecruiter,
   generateRejectionFeedback,
   analyzeSkillRoadmap,
+  handleGeminiChat,
 } from '../controllers/aiController.js';
 
 const router = express.Router();
@@ -15,6 +16,9 @@ router.post('/analyze-resume', analyzeResumeMatch);
 
 // POST /api/ai/generate-cover-letter
 router.post('/generate-cover-letter', generateCoverLetter);
+
+// POST /api/ai/chat (Official Gemini Chatbot Endpoint)
+router.post('/chat', handleGeminiChat);
 
 // POST /api/ai/copilot
 router.post('/copilot', processCopilotChat);

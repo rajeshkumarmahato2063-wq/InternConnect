@@ -74,44 +74,40 @@ export const copilotService = {
     }
   },
 
-  // Send message to AI Copilot via Backend / Edge Function & persist into Supabase
+  // Send message to AI Copilot via Backend Gemini Chat Endpoint & persist into Supabase
   sendMessage: async ({ userId, userRole = 'student', message, history = [] }) => {
-    const userContext = await copilotService.getUserContextMemory(userId, userRole);
     let reply = '';
 
-    // 1. Try Supabase Edge Function first
+    // 1. Primary: Direct call to official backend Gemini Chat API
     try {
-      const edgeRes = await fetch(`${supabase.supabaseUrl}/functions/v1/ai-copilot`, {
+      const chatRes = await fetch('http://localhost:5000/api/ai/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${supabase.supabaseKey}`,
-        },
-        body: JSON.stringify({
-          userMessage: message,
-          userRole,
-          userContext,
-          conversationHistory: history,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
       });
 
-      if (edgeRes.ok) {
-        const json = await edgeRes.json();
-        if (json.success && json.reply) {
-          reply = json.reply;
+      if (chatRes.ok) {
+        const data = await chatRes.json();
+        if (data.reply || data.text) {
+          reply = data.reply || data.text;
         }
+      } else {
+        const errJson = await chatRes.json().catch(() => ({}));
+        console.warn('Gemini chat backend error:', errJson.error || chatRes.statusText);
       }
-    } catch (edgeErr) {
-      console.warn('Supabase Edge Function unavailable, trying backend fallback:', edgeErr.message);
+    } catch (apiErr) {
+      console.warn('Backend /api/ai/chat error, trying copilot fallback:', apiErr.message);
     }
 
-    // 2. Try Node.js Backend API fallback
+    // 2. Fallback: Try /api/ai/copilot endpoint
     if (!reply) {
       try {
+        const userContext = await copilotService.getUserContextMemory(userId, userRole);
         const backRes = await fetch('http://localhost:5000/api/ai/copilot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            message,
             userMessage: message,
             userRole,
             studentName: userContext.name,
@@ -122,12 +118,12 @@ export const copilotService = {
 
         if (backRes.ok) {
           const json = await backRes.json();
-          if (json.success && json.reply) {
-            reply = json.reply;
+          if (json.reply || json.text) {
+            reply = json.reply || json.text;
           }
         }
       } catch (backErr) {
-        console.warn('Backend API copilot error, using intelligent local engine:', backErr.message);
+        console.warn('Backend copilot fallback error:', backErr.message);
       }
     }
 

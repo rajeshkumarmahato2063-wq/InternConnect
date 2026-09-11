@@ -22,7 +22,9 @@ import {
   User,
   Zap,
   TrendingUp,
-  Brain
+  Brain,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { copilotService } from '../../services/copilotService';
@@ -97,7 +99,7 @@ const AICareerChatbot = () => {
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setInputMessage('');
+    setInputMessage('');
     setIsTyping(true);
 
     try {
@@ -107,6 +109,10 @@ const AICareerChatbot = () => {
         message: queryText,
         history: messages,
       });
+
+      if (!replyText) {
+        throw new Error('No response received from Gemini AI.');
+      }
 
       const aiMsg = {
         id: `msg_ai_${Date.now()}`,
@@ -123,7 +129,8 @@ const AICareerChatbot = () => {
         {
           id: `msg_err_${Date.now()}`,
           sender: 'ai',
-          text: 'I am here to assist with your career and internship search! Try asking for internship recommendations, resume review, or interview questions.',
+          isError: true,
+          text: `⚠️ ${err.message || 'Unable to get a response from Gemini AI. Please verify your connection or try again.'}`,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
@@ -197,7 +204,7 @@ const AICareerChatbot = () => {
                     InternConnect AI Copilot
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   </h3>
-                  <p className="text-[10px] text-indigo-300">Powered by Gemini 1.5 Flash • Context Memory Active</p>
+                  <p className="text-[10px] text-indigo-300">Powered by Gemini 2.5 Flash • Active</p>
                 </div>
               </div>
 
@@ -228,8 +235,9 @@ const AICareerChatbot = () => {
                   <button
                     key={idx}
                     type="button"
+                    disabled={isTyping}
                     onClick={() => handleSendMessage(action.prompt)}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 hover:scale-105"
+                    className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/20 text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 hover:scale-105 disabled:opacity-50"
                   >
                     <IconComponent className="w-3.5 h-3.5 text-amber-300" />
                     <span>{action.label}</span>
@@ -242,6 +250,7 @@ const AICareerChatbot = () => {
             <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin">
               {messages.map((msg) => {
                 const isUser = msg.sender === 'user';
+                const isErr = Boolean(msg.isError);
 
                 return (
                   <div
@@ -253,10 +262,18 @@ const AICareerChatbot = () => {
                       className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-xs font-bold ${
                         isUser
                           ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 text-white'
+                          : isErr
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                           : 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30'
                       }`}
                     >
-                      {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-amber-300" />}
+                      {isUser ? (
+                        <User className="w-4 h-4" />
+                      ) : isErr ? (
+                        <AlertCircle className="w-4 h-4 text-rose-400" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-amber-300" />
+                      )}
                     </div>
 
                     {/* Message Bubble */}
@@ -265,12 +282,14 @@ const AICareerChatbot = () => {
                         className={`p-3.5 rounded-2xl text-xs leading-relaxed space-y-2 ${
                           isUser
                             ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-md'
+                            : isErr
+                            ? 'bg-rose-950/60 border border-rose-800/80 text-rose-200 shadow-md'
                             : 'bg-slate-950/80 border border-slate-800 text-slate-200 shadow-md'
                         }`}
                       >
                         <p className="whitespace-pre-wrap">{msg.text}</p>
 
-                        {!isUser && (
+                        {!isUser && !isErr && (
                           <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[10px] text-slate-400">
                             <span>Gemini AI</span>
                             <button
@@ -318,15 +337,16 @@ const AICareerChatbot = () => {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Ask AI Copilot anything..."
-                className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                disabled={isTyping}
+                placeholder={isTyping ? 'Waiting for Gemini AI...' : 'Ask AI Copilot anything...'}
+                className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={!inputMessage.trim()}
-                className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white disabled:opacity-50 transition-all shadow-md shrink-0"
+                disabled={!inputMessage.trim() || isTyping}
+                className="p-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white disabled:opacity-50 transition-all shadow-md shrink-0 cursor-pointer disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4" />
+                {isTyping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </button>
             </form>
           </motion.div>

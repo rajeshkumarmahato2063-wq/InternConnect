@@ -1,3 +1,5 @@
+import { GoogleGenAI } from '@google/genai';
+
 // Backend Controller for Gemini AI Resume Match Score Analysis, AI Cover Letter & AI Copilot
 
 export const analyzeResumeMatch = async (req, res) => {
@@ -193,20 +195,100 @@ ${studentDegree} | ${studentCollege}`;
   }
 };
 
+// Dedicated Gemini Chatbot Controller using official @google/genai SDK
+export const handleGeminiChat = async (req, res) => {
+  try {
+    const message = req.body.message || req.body.userMessage;
+
+    if (!message || (typeof message === 'string' && !message.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required field: message',
+        message: 'Message cannot be empty.',
+      });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'YOUR_GEMINI_API_KEY') {
+      return res.status(500).json({
+        success: false,
+        error: 'GEMINI_API_KEY is not configured on the server.',
+      });
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    // Target model: gemini-2.5-flash with resilient fallback for API availability
+    const candidateModels = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-1.5-flash'];
+    let textResponse = '';
+    let selectedModel = '';
+    let lastError = null;
+
+    for (const model of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model,
+          contents: message,
+        });
+
+        if (response && response.text) {
+          textResponse = response.text;
+          selectedModel = model;
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(`Gemini chat attempt with ${model} failed:`, err.message);
+      }
+    }
+
+    if (!textResponse && lastError) {
+      return res.status(502).json({
+        success: false,
+        error: `Gemini API service error: ${lastError.message}`,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      model: selectedModel,
+      reply: textResponse.trim(),
+      text: textResponse.trim(),
+    });
+  } catch (error) {
+    console.error('handleGeminiChat error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error processing chatbot message.',
+    });
+  }
+};
+
 // AI Internship Copilot Controller using Gemini API
 export const processCopilotChat = async (req, res) => {
   try {
     const {
-      userMessage = '',
+      message,
+      userMessage = message || '',
       conversationHistory = [],
       studentSkills = ['React', 'JavaScript', 'Node.js', 'Git'],
       studentName = 'Candidate',
     } = req.body;
 
+    const queryMessage = userMessage || message;
+
+    if (!queryMessage || (typeof queryMessage === 'string' && !queryMessage.trim())) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required',
+      });
+    }
+
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY') {
       try {
+        const ai = new GoogleGenAI({ apiKey });
         const systemPrompt = `You are InternConnect AI Copilot — an expert AI Career Coach and Tech Recruiter.
 Help candidate ${studentName} (Skills: ${JSON.stringify(studentSkills)}).
 Your core capabilities include:
@@ -218,43 +300,33 @@ Your core capabilities include:
 
 Respond helpfully, concisely, and format key points with bullet points or bold text.`;
 
-        const geminiContents = [
-          { role: 'user', parts: [{ text: systemPrompt }] },
-          { role: 'model', parts: [{ text: 'Understood! I am ready to act as the candidate’s AI Internship Copilot.' }] },
-        ];
+        const candidateModels = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-1.5-flash'];
+        let replyText = '';
 
-        // Append past conversation context
-        conversationHistory.slice(-6).forEach((msg) => {
-          geminiContents.push({
-            role: msg.sender === 'user' ? 'user' : 'model',
-            parts: [{ text: msg.text }],
-          });
-        });
-
-        // Append current prompt
-        geminiContents.push({
-          role: 'user',
-          parts: [{ text: userMessage }],
-        });
-
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-
-        const geminiRes = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: geminiContents }),
-        });
-
-        if (geminiRes.ok) {
-          const geminiData = await geminiRes.json();
-          const replyText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (replyText) {
-            return res.status(200).json({
-              success: true,
-              source: 'gemini-1.5-flash',
-              reply: replyText.trim(),
+        for (const model of candidateModels) {
+          try {
+            const promptWithContext = `${systemPrompt}\n\nRecent context: ${JSON.stringify(conversationHistory.slice(-4))}\n\nUser: ${queryMessage}`;
+            const response = await ai.models.generateContent({
+              model,
+              contents: promptWithContext,
             });
+
+            if (response && response.text) {
+              replyText = response.text.trim();
+              break;
+            }
+          } catch (modelErr) {
+            console.warn(`Copilot model ${model} attempt error:`, modelErr.message);
           }
+        }
+
+        if (replyText) {
+          return res.status(200).json({
+            success: true,
+            source: 'gemini',
+            reply: replyText,
+            text: replyText,
+          });
         }
       } catch (geminiError) {
         console.warn('Gemini Copilot API call failed, using intelligent AI fallback:', geminiError.message);
