@@ -7,6 +7,7 @@ import Container from '../Container/Container';
 import SearchBar from '../SearchBar/SearchBar';
 import Badge from '../Badge/Badge';
 import { useAuth } from '../../context/AuthContext';
+import { copilotService } from '../../services/copilotService';
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -43,27 +44,19 @@ const Hero = () => {
     setIsSending(true);
 
     try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query }),
+      const reply = await copilotService.sendMessage({
+        userId: user?.id,
+        userRole: role || 'student',
+        message: query,
+        history: messages,
       });
-
-      let reply = '';
-      if (response.ok) {
-        const data = await response.json();
-        reply = data.reply || data.text || 'I have processed your request!';
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        reply = errData.error || 'Sorry, I encountered an issue reaching the Gemini API. Please try again.';
-      }
 
       setMessages((prev) => [
         ...prev,
         {
           id: `ai_${Date.now()}`,
           sender: 'ai',
-          text: reply,
+          text: reply || 'I have processed your request!',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);

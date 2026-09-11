@@ -79,6 +79,7 @@ export const copilotService = {
   // Send message to AI Copilot via Backend Gemini Chat Endpoint & persist into Supabase
   sendMessage: async ({ userId, userRole = 'student', message, history = [] }) => {
     let reply = '';
+    let userContext = null;
 
     // 1. Primary: Direct call to official backend Gemini Chat API
     try {
@@ -104,7 +105,7 @@ export const copilotService = {
     // 2. Fallback: Try /api/ai/copilot endpoint
     if (!reply) {
       try {
-        const userContext = await copilotService.getUserContextMemory(userId, userRole);
+        userContext = await copilotService.getUserContextMemory(userId, userRole);
         const backRes = await fetch(`${API_BASE_URL}/api/ai/copilot`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -112,8 +113,8 @@ export const copilotService = {
             message,
             userMessage: message,
             userRole,
-            studentName: userContext.name,
-            studentSkills: userContext.skills,
+            studentName: userContext?.name || 'Candidate',
+            studentSkills: userContext?.skills || [],
             conversationHistory: history,
           }),
         });
@@ -131,6 +132,9 @@ export const copilotService = {
 
     // 3. Client Heuristic Fallback
     if (!reply) {
+      if (!userContext) {
+        userContext = await copilotService.getUserContextMemory(userId, userRole);
+      }
       const query = message.toLowerCase();
       const skillsArr = Array.isArray(userContext?.skills) ? userContext.skills : ['React', 'JavaScript', 'Git'];
       const skillsStr = skillsArr.slice(0, 3).join(', ') || 'Software Engineering';
