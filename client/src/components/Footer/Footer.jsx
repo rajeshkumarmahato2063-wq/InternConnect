@@ -2,8 +2,42 @@ import React from 'react';
 import { Sparkles, Twitter, Github, Linkedin, Instagram, Mail, Heart } from 'lucide-react';
 import Container from '../Container/Container';
 
-const Footer = () => {
+// Helper to format external URLs correctly
+const formatExternalUrl = (url) => {
+  if (!url || typeof url !== 'string') return '#';
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === '#') return '#';
+  if (/^(https?:\/\/|mailto:|tel:|\/\/)/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
+const Footer = ({ socialLinks = {} }) => {
   const currentYear = new Date().getFullYear();
+
+  const socials = [
+    {
+      icon: Twitter,
+      href: socialLinks.twitter || 'https://x.com',
+      label: 'Twitter',
+    },
+    {
+      icon: Linkedin,
+      href: socialLinks.linkedin || 'https://linkedin.com',
+      label: 'LinkedIn',
+    },
+    {
+      icon: Github,
+      href: socialLinks.github || 'https://github.com',
+      label: 'GitHub',
+    },
+    {
+      icon: Instagram,
+      href: socialLinks.instagram || 'https://instagram.com',
+      label: 'Instagram',
+    },
+  ];
 
   return (
     <footer className="bg-slate-950 border-t border-slate-800/80 pt-16 pb-12 text-slate-400 relative overflow-hidden">
@@ -26,21 +60,26 @@ const Footer = () => {
 
             {/* Social Icons */}
             <div className="flex items-center space-x-3 pt-2">
-              {[
-                { icon: Twitter, href: '#', label: 'Twitter' },
-                { icon: Linkedin, href: '#', label: 'LinkedIn' },
-                { icon: Github, href: '#', label: 'GitHub' },
-                { icon: Instagram, href: '#', label: 'Instagram' },
-              ].map((social) => {
+              {socials.map((social) => {
                 const IconComponent = social.icon;
+                const finalHref = formatExternalUrl(social.href);
+                const isExternal = finalHref !== '#';
+
                 return (
                   <a
                     key={social.label}
-                    href={social.href}
+                    href={finalHref}
                     aria-label={social.label}
+                    target={isExternal ? '_blank' : undefined}
+                    rel={isExternal ? 'noopener noreferrer' : undefined}
+                    onClick={(e) => {
+                      if (!isExternal) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:border-indigo-500/50 hover:bg-slate-800 transition-all duration-200"
                   >
-                    <IconComponent className="w-4 h-4" />
+                    <IconComponent className="w-4 h-4 pointer-events-none" />
                   </a>
                 );
               })}

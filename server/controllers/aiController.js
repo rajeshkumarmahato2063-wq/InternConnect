@@ -273,9 +273,22 @@ Respond helpfully, concisely, and format key points with bullet points or bold t
       reply = `✉️ **Generated Cover Letter Snippet:**\n\nDear Hiring Manager,\nI am writing to express my enthusiastic interest in the Software Engineering Internship. My background in React, Node.js, and Supabase directly aligns with your engineering standards. I take pride in building scalable web applications and look forward to contributing to your team.\n\n*Click the 'Generate Cover Letter' tool on any job page for a full PDF export!*`;
     } else if (query.includes('interview') || query.includes('prep') || query.includes('question')) {
       reply = `🎙️ **Top Technical Interview Questions for Your Stack:**\n\n1. **React Reconciliation:** How does the Virtual DOM diffing algorithm work, and why are keys essential in mapped lists?\n2. **State Management:** When would you choose Context API vs Redux/Zustand?\n3. **System Design:** How do you handle authentication securely with JWT tokens and Supabase Row Level Security?`;
-    } else if (query.includes('roadmap') || query.includes('career') || query.includes('learn')) {
-      reply = `🗺️ **6-Month Full-Stack Engineer Career Roadmap:**\n\n- **Month 1:** Advanced React, Custom Hooks & Tailwind CSS\n- **Month 2:** Node.js, Express REST APIs & Supabase RLS\n- **Month 3:** Docker, AWS S3 deployment & GitHub Actions CI/CD\n- **Month 4-6:** LeetCode DSA sprints & Mock Technical Interviews`;
     }
+
+    return res.status(200).json({
+      success: true,
+      source: 'heuristic-engine',
+      reply,
+    });
+  } catch (error) {
+    console.error('AI Copilot error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate copilot reply',
+      error: error.message,
+    });
+  }
+};
 
 // AI Recruiter Applicant Scoring & Structured Ranking Controller using Gemini API
 export const analyzeApplicantForRecruiter = async (req, res) => {
@@ -484,6 +497,15 @@ Provide a supportive 2-sentence feedback message encouraging their growth and de
 
     const missingStr = missingSkills.length > 0 ? missingSkills.join(' and ') : 'additional backend stack technologies';
     const feedback = `You matched ${matchScore}%. Learning ${missingStr} and completing hands-on project implementations will significantly strengthen your future application profile.`;
+
+    return res.status(200).json({
+      success: true,
+      feedback,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // AI Skill Verification Roadmap & Diagnostic Engine using Gemini API
 export const analyzeSkillRoadmap = async (req, res) => {
