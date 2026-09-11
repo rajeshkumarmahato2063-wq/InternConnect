@@ -109,11 +109,15 @@ app.get('*', (req, res) => {
 // Centralized Error Handling Middleware
 app.use(errorHandler);
 
-// Start Express Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n==================================================`);
-  console.log(`🚀 InternConnect AI Server running on PORT ${PORT}`);
-  console.log(`🔗 API Endpoint: http://localhost:${PORT}/api/auth`);
-  console.log(`==================================================\n`);
-});
+// Start Express Server (Standalone mode for Render/Railway/Localhost)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n==================================================`);
+    console.log(`🚀 InternConnect AI Server running on PORT ${PORT}`);
+    console.log(`🔗 API Endpoint: http://localhost:${PORT}/api/auth`);
+    console.log(`==================================================\n`);
+  });
+}
+
+export default app;
