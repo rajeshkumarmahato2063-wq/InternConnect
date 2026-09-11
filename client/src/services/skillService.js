@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+
 export const DEFAULT_CATEGORIES = [
   { id: 'cat_js', name: 'JavaScript', icon: 'Code2', color: 'amber' },
   { id: 'cat_react', name: 'React', icon: 'Atom', color: 'cyan' },
@@ -289,7 +291,7 @@ export const skillService = {
   // Fetch AI Skill Roadmap & Diagnostic
   getSkillRoadmap: async ({ studentName, challengeTitle, score, passed, missedTopics }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/ai/skill-roadmap', {
+      const response = await fetch(`${API_BASE_URL}/api/ai/skill-roadmap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentName, challengeTitle, score, passed, missedTopics }),

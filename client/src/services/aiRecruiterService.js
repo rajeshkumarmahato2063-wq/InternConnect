@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+
 export const aiRecruiterService = {
   // Analyze a single applicant or retrieve cached analysis from Supabase
   analyzeApplicant: async ({
@@ -51,7 +53,7 @@ export const aiRecruiterService = {
     let resultData = null;
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai/recruiter-analyze', {
+      const response = await fetch(`${API_BASE_URL}/api/ai/recruiter-analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -204,7 +206,7 @@ export const aiRecruiterService = {
     let feedback = '';
 
     try {
-      const response = await fetch('http://localhost:5000/api/ai/rejection-feedback', {
+      const response = await fetch(`${API_BASE_URL}/api/ai/rejection-feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

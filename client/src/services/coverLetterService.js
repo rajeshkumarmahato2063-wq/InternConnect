@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+
 export const coverLetterService = {
   // Generate cover letter via Gemini API backend & persist to Supabase
   generate: async ({
@@ -17,7 +19,7 @@ export const coverLetterService = {
 
     // 1. Call Backend Gemini AI endpoint
     try {
-      const response = await fetch('http://localhost:5000/api/ai/generate-cover-letter', {
+      const response = await fetch(`${API_BASE_URL}/api/ai/generate-cover-letter`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

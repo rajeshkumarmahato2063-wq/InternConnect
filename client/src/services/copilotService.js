@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+
 export const copilotService = {
   // Load conversation history for current user from Supabase ai_conversations table
   getHistory: async (userId) => {
@@ -80,7 +82,7 @@ export const copilotService = {
 
     // 1. Primary: Direct call to official backend Gemini Chat API
     try {
-      const chatRes = await fetch('http://localhost:5000/api/ai/chat', {
+      const chatRes = await fetch(`${API_BASE_URL}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
@@ -103,7 +105,7 @@ export const copilotService = {
     if (!reply) {
       try {
         const userContext = await copilotService.getUserContextMemory(userId, userRole);
-        const backRes = await fetch('http://localhost:5000/api/ai/copilot', {
+        const backRes = await fetch(`${API_BASE_URL}/api/ai/copilot`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

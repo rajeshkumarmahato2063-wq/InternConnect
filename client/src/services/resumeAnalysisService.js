@@ -1,5 +1,7 @@
 import { supabase } from './supabaseClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+
 export const resumeAnalysisService = {
   // Fetch existing analysis from Supabase or local storage cache
   getAnalysis: async (studentId, internshipId) => {
@@ -36,7 +38,7 @@ export const resumeAnalysisService = {
     return cached ? JSON.parse(cached) : null;
   },
 
-  // Run AI Resume Match Analysis via backend (Gemini API) and persist to Supabase
+  // Analyze Resume Match Score against job requirements using Gemini AI
   runAnalysis: async ({
     studentId,
     internshipId,
@@ -50,7 +52,7 @@ export const resumeAnalysisService = {
 
     // 1. Call backend API endpoint connected to Gemini AI
     try {
-      const response = await fetch('http://localhost:5000/api/ai/analyze-resume', {
+      const response = await fetch(`${API_BASE_URL}/api/ai/analyze-resume`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

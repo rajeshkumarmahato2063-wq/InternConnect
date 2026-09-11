@@ -7,9 +7,11 @@ import {
   MOCK_NOTIFICATIONS,
 } from './mockData';
 
-// Configure Axios Client for Phase 3 Express Backend (http://localhost:5000/api)
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+
+// Configure Axios Client for Production / Express Backend
 export const axiosClient = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: `${API_BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
