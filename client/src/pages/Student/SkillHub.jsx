@@ -22,7 +22,6 @@ import {
   ShieldCheck,
   Zap
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -92,11 +91,7 @@ const SkillHub = () => {
   });
 
   return (
-    <DashboardLayout
-      title="Skill Verification & Coding Challenge Hub"
-      subtitle="Complete timed technical challenges, earn recruiter-verified skill badges, view AI learning roadmaps, and rank on global leaderboards."
-    >
-      <div className="space-y-8">
+    <div className="space-y-8">
         {/* Banner Section */}
         <Card variant="glass" className="p-6 relative overflow-hidden bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-slate-900/60 border-indigo-500/30">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
@@ -361,7 +356,6 @@ const SkillHub = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 };
 

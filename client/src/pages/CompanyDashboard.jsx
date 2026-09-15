@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Briefcase, Users, Calendar, CheckCircle, Plus, Video, ExternalLink, Clock, Tag } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import DashboardLayout from '../layouts/DashboardLayout';
 import Card from '../components/Card/Card';
 import Button from '../components/Button/Button';
 import EmptyState from '../components/Common/EmptyState';
@@ -82,11 +81,7 @@ const CompanyDashboard = () => {
   });
 
   return (
-    <DashboardLayout
-      title="Recruiter Portal Overview"
-      subtitle="Manage active internship postings, review candidate submissions, and conduct video interviews."
-    >
-      <div className="space-y-8">
+    <div className="space-y-8">
         
         {/* Top Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -320,7 +315,6 @@ const CompanyDashboard = () => {
         </div>
 
       </div>
-    </DashboardLayout>
   );
 };
 

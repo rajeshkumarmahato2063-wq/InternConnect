@@ -134,123 +134,37 @@ function App() {
 
                 {/* Protected Company Routes */}
                 <Route
-                  path="/company/dashboard"
                   element={
                     <ProtectedRoute allowedRole="company">
-                      <CompanyDashboard />
+                      <DashboardLayout />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="/company/profile"
-                  element={
-                    <ProtectedRoute allowedRole="company">
-                      <CompanyProfile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/company/post-job"
-                  element={
-                    <ProtectedRoute allowedRole="company">
-                      <PostInternship />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/company/jobs"
-                  element={
-                    <ProtectedRoute allowedRole="company">
-                      <ManageJobs />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/company/applicants"
-                  element={
-                    <ProtectedRoute allowedRole="company">
-                      <ApplicantManagement />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/company/assessments"
-                  element={
-                    <ProtectedRoute allowedRole="company">
-                      <CompanyAssessments />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/company/messages"
-                  element={
-                    <ProtectedRoute allowedRole="company">
-                      <DashboardLayout>
-                        <RecruiterMessagesPage />
-                      </DashboardLayout>
-                    </ProtectedRoute>
-                  }
-                />
+                >
+                  <Route path="/company/dashboard" element={<CompanyDashboard />} />
+                  <Route path="/company/profile" element={<CompanyProfile />} />
+                  <Route path="/company/post-job" element={<PostInternship />} />
+                  <Route path="/company/jobs" element={<ManageJobs />} />
+                  <Route path="/company/applicants" element={<ApplicantManagement />} />
+                  <Route path="/company/assessments" element={<CompanyAssessments />} />
+                  <Route path="/company/messages" element={<RecruiterMessagesPage />} />
+                </Route>
 
                 {/* Protected Admin Routes */}
                 <Route
-                  path="/admin/dashboard"
                   element={
                     <ProtectedRoute allowedRole="admin">
-                      <AdminDashboard />
+                      <DashboardLayout />
                     </ProtectedRoute>
                   }
-                />
-                <Route
-                  path="/admin/verification"
-                  element={
-                    <ProtectedRoute allowedRole="admin">
-                      <CompanyVerification />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/users"
-                  element={
-                    <ProtectedRoute allowedRole="admin">
-                      <UserManagement />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/jobs-moderation"
-                  element={
-                    <ProtectedRoute allowedRole="admin">
-                      <JobModeration />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/analytics"
-                  element={
-                    <ProtectedRoute allowedRole="admin">
-                      <AdminAnalytics />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/reports"
-                  element={
-                    <ProtectedRoute allowedRole="admin">
-                      <AdminReports />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/messages"
-                  element={
-                    <ProtectedRoute allowedRole="admin">
-                      <DashboardLayout>
-                        <AdminMessagesPage />
-                      </DashboardLayout>
-                    </ProtectedRoute>
-                  }
-                />
+                >
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/verification" element={<CompanyVerification />} />
+                  <Route path="/admin/users" element={<UserManagement />} />
+                  <Route path="/admin/jobs-moderation" element={<JobModeration />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  <Route path="/admin/reports" element={<AdminReports />} />
+                  <Route path="/admin/messages" element={<AdminMessagesPage />} />
+                </Route>
 
                 {/* 404 Fallback Route */}
                 <Route path="*" element={<NotFound />} />

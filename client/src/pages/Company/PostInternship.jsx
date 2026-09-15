@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Briefcase, Save, Send, CheckCircle2, Plus, AlertCircle } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -119,11 +118,7 @@ const PostInternship = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Post New Internship"
-      subtitle="Publish an internship opening to reach over 10,000 verified university candidates."
-    >
-      <Card variant="glass" className="p-8">
+    <Card variant="glass" className="p-8">
         {success ? (
           <div className="py-12 text-center flex flex-col items-center space-y-3">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center animate-bounce">
@@ -323,7 +318,6 @@ const PostInternship = () => {
           </form>
         )}
       </Card>
-    </DashboardLayout>
   );
 };
 

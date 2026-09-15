@@ -17,7 +17,6 @@ import {
   Legend,
 } from 'recharts';
 import { TrendingUp, Users, Building2, Briefcase, FileText } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 
 const monthlyApplicationsData = [
@@ -55,11 +54,7 @@ const userGrowthData = [
 
 const AdminAnalytics = () => {
   return (
-    <DashboardLayout
-      title="Platform Analytics & Insights"
-      subtitle="Real-time performance metrics, recruitment volume, category shares, and platform growth graphs."
-    >
-      <div className="space-y-8">
+    <div className="space-y-8">
         {/* Top Summary Badges */}
         <div className="p-6 rounded-3xl bg-gradient-to-r from-blue-900/40 via-indigo-900/50 to-purple-900/40 border border-indigo-500/30 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -175,7 +170,6 @@ const AdminAnalytics = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
   );
 };
 

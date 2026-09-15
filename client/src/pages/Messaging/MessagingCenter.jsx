@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Search, MessageSquare, CheckCheck, User, Building, Circle, Sparkles } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import internshipService from '../../services/internshipService';
 
@@ -89,11 +88,7 @@ export default function MessagingCenter() {
   );
 
   return (
-    <DashboardLayout
-      title="Real-Time Messaging Center"
-      subtitle="Direct line of communication between candidates and verified hiring managers."
-    >
-      <div className="h-[680px] rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+    <div className="h-[680px] rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-12">
         {/* Left Sidebar: Conversation List */}
         <div className="lg:col-span-4 border-r border-slate-800 flex flex-col h-full bg-slate-900/60">
           <div className="p-4 border-b border-slate-800 space-y-3">
@@ -242,6 +237,5 @@ export default function MessagingCenter() {
           )}
         </div>
       </div>
-    </DashboardLayout>
   );
 }

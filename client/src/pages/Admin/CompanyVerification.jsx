@@ -11,7 +11,6 @@ import {
   Globe,
   Eye,
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { companyVerificationService } from '../../services/companyVerificationService';
@@ -76,11 +75,7 @@ const CompanyVerification = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Employer Verification Dashboard"
-      subtitle="Review employer corporate registration documents, tax IDs, and issue platform verification badges."
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Filter Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800">
@@ -232,7 +227,6 @@ const CompanyVerification = () => {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 };
 

@@ -15,7 +15,6 @@ import {
   Sparkles,
   FileCheck
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -44,11 +43,7 @@ const StudentAssessments = () => {
   }, [user]);
 
   return (
-    <DashboardLayout
-      title="Online Internship Assessments"
-      subtitle="Complete company screening assessments before interview scheduling. Review instructions, timed test criteria, and auto-scored results."
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         {loading ? (
           <div className="py-20 text-center text-slate-400 space-y-3">
             <div className="w-8 h-8 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin mx-auto" />
@@ -191,7 +186,6 @@ const StudentAssessments = () => {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 };
 

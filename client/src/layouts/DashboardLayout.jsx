@@ -11,6 +11,26 @@ const DashboardLayout = ({ children, title }) => {
   const getPageTitle = () => {
     if (title) return title;
     const path = location.pathname.toLowerCase();
+    
+    // Admin Routes
+    if (path.includes('admin/dashboard')) return 'Admin Portal Dashboard';
+    if (path.includes('admin/verification')) return 'Company Verification';
+    if (path.includes('admin/users')) return 'User Management';
+    if (path.includes('admin/jobs-moderation')) return 'Job Moderation';
+    if (path.includes('admin/analytics')) return 'Platform Analytics';
+    if (path.includes('admin/reports')) return 'Audit Reports';
+    if (path.includes('admin/messages')) return 'Admin Support & Moderation';
+
+    // Company Routes
+    if (path.includes('company/dashboard')) return 'Recruiter Dashboard';
+    if (path.includes('company/profile')) return 'Company Profile';
+    if (path.includes('company/post-job')) return 'Post Internship';
+    if (path.includes('company/jobs')) return 'Manage Internships';
+    if (path.includes('company/applicants')) return 'Applicant Management';
+    if (path.includes('company/assessments')) return 'Company Assessments';
+    if (path.includes('company/messages')) return 'Recruiter Messages';
+
+    // Student Routes
     if (path.includes('dashboard')) return 'Student Dashboard';
     if (path.includes('explore')) return 'Explore Internships';
     if (path.includes('saved-jobs')) return 'Saved Jobs';
@@ -26,6 +46,8 @@ const DashboardLayout = ({ children, title }) => {
     if (path.includes('portfolio')) return 'Portfolio Builder';
     if (path.includes('assessments')) return 'Skills Assessments';
     if (path.includes('skill-hub')) return 'Skill Challenge Hub';
+    if (path.includes('skill-challenge')) return 'Coding Challenge Portal';
+    if (path.includes('internship')) return 'Internship Details';
     return 'InternConnect AI';
   };
 

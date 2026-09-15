@@ -19,7 +19,6 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { useAuth } from '../../context/AuthContext';
@@ -183,10 +182,7 @@ const CompanyAssessments = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Online Internship Assessment Builder"
-      subtitle="Design MCQ online screening assessments for your internships, set duration & passing criteria, and evaluate candidate leaderboards."
-    >
+    <div className="space-y-6">
       {/* Toast Notification Banner */}
       <AnimatePresence>
         {toastMsg && (
@@ -689,7 +685,7 @@ const CompanyAssessments = () => {
           </div>
         )}
       </AnimatePresence>
-    </DashboardLayout>
+    </div>
   );
 };
 

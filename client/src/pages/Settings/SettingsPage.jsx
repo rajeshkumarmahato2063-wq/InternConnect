@@ -19,7 +19,6 @@ import {
   RefreshCw,
   LogOut
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../services/supabaseClient';
@@ -196,8 +195,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <DashboardLayout title={getPageTitle()} subtitle={getPageSubtitle()}>
-      <div className="space-y-8 max-w-4xl mx-auto pb-12">
+    <div className="space-y-8 max-w-4xl mx-auto pb-12">
         {/* Toast Notification */}
         {message.text && (
           <div
@@ -654,6 +652,5 @@ export default function SettingsPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
   );
 }

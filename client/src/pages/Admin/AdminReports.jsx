@@ -1,81 +1,60 @@
-import React from 'react';
-import { Download, FileText, Table, CheckCircle2, Building2, Users, Briefcase } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
+import React, { useState, useEffect } from 'react';
+import { Download, Table, Users, Briefcase } from 'lucide-react';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { reportService } from '../../services/reportService';
-import { MOCK_INTERNSHIPS, MOCK_APPLICATIONS } from '../../services/mockData';
-
-const studentReportData = [
-  { ID: 'STD-101', Name: 'Aarav Sharma', Email: 'aarav@university.edu', College: 'IIT Bombay', Degree: 'B.Tech CSE', AppliedJobs: 5, Status: 'Active' },
-  { ID: 'STD-102', Name: 'Priya Patel', Email: 'priya@university.edu', College: 'NIT Trichy', Degree: 'B.Tech IT', AppliedJobs: 3, Status: 'Active' },
-  { ID: 'STD-103', Name: 'Rohan Verma', Email: 'rohan@university.edu', College: 'BITS Pilani', Degree: 'B.E. ECE', AppliedJobs: 4, Status: 'Active' },
-];
-
-const companyReportData = [
-  { ID: 'CMP-201', CompanyName: 'Microsoft', Industry: 'Software', JobsPosted: 4, HiresMade: 12, Status: 'Verified' },
-  { ID: 'CMP-202', CompanyName: 'Google', Industry: 'Cloud & AI', JobsPosted: 3, HiresMade: 9, Status: 'Verified' },
-  { ID: 'CMP-203', CompanyName: 'Amazon', Industry: 'E-commerce', JobsPosted: 5, HiresMade: 15, Status: 'Verified' },
-];
-
-const internshipReportData = MOCK_INTERNSHIPS.map((j) => ({
-  JobID: j.id,
-  Title: j.title,
-  Company: j.companyName,
-  Location: j.location,
-  WorkMode: j.workMode,
-  Stipend: j.stipend,
-  Openings: j.openings || 1,
-  Status: j.status || 'Active',
-}));
-
-const applicationReportData = MOCK_APPLICATIONS.map((a) => ({
-  AppID: a.id,
-  Candidate: a.studentName || 'Candidate',
-  JobTitle: a.jobTitle,
-  Company: a.companyName || 'Microsoft',
-  Status: a.status,
-  AppliedDate: a.appliedAt?.slice(0, 10) || '2026-09-01',
-}));
+import { apiService } from '../../services/api';
+import { internshipService } from '../../services/internshipService';
 
 const AdminReports = () => {
+  const [users, setUsers] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [uData, jData] = await Promise.all([
+          apiService.getUsers(),
+          internshipService.getInternships(),
+        ]);
+        setUsers(uData || []);
+        setJobs(jData || []);
+      } catch (err) {
+        console.error('Error loading reports data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
   const reports = [
     {
-      id: 'students',
-      title: 'Student Candidates Master Report',
-      description: 'Complete registration directory, enrolled colleges, degrees, and active application counts.',
+      id: 'users',
+      title: 'Platform User & Account Directory Audit',
+      description: 'Comprehensive export of registered candidates, recruiters, verification statuses, and roles.',
       icon: Users,
-      data: studentReportData,
+      data: users,
     },
     {
-      id: 'companies',
-      title: 'Company Recruiters Master Report',
-      description: 'Verified enterprise accounts, total postings created, and successful candidate hiring metrics.',
-      icon: Building2,
-      data: companyReportData,
-    },
-    {
-      id: 'internships',
-      title: 'Internship Listings Audit Report',
-      description: 'Active openings, work mode distribution, stipend values, and application deadlines.',
+      id: 'jobs',
+      title: 'Active Internship Postings Audit',
+      description: 'Full audit of published internship listings, stipends, requirements, and employer associations.',
       icon: Briefcase,
-      data: internshipReportData,
-    },
-    {
-      id: 'applications',
-      title: 'Candidate Applications Pipeline Report',
-      description: 'Submissions timeline, candidate AI match scores, interview schedules, and final hiring status.',
-      icon: FileText,
-      data: applicationReportData,
+      data: jobs,
     },
   ];
 
   return (
-    <DashboardLayout
-      title="Platform Executive Reports"
-      subtitle="Export audit-ready PDF and CSV reports for student profiles, company recruiters, listings, and hiring pipelines."
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
+      {loading ? (
+        <div className="py-16 text-center text-slate-400 space-y-3">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-500/20 border-t-indigo-500 animate-spin mx-auto" />
+          <p className="text-xs font-semibold">Generating audit report data...</p>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {reports.map((rep) => {
             const Icon = rep.icon;
@@ -118,8 +97,8 @@ const AdminReports = () => {
             );
           })}
         </div>
-      </div>
-    </DashboardLayout>
+      )}
+    </div>
   );
 };
 

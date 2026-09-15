@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bookmark, Trash2, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import DashboardLayout from '../../layouts/DashboardLayout';
+
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import EmptyState from '../../components/Common/EmptyState';
@@ -33,10 +32,7 @@ const SavedJobs = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Saved Internships"
-      subtitle="Your bookmarked career opportunities and saved job listings."
-    >
+    <div className="space-y-6">
       {bookmarkedInternships.length === 0 ? (
         <EmptyState
           icon={Bookmark}
@@ -96,7 +92,7 @@ const SavedJobs = () => {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </div>
   );
 };
 

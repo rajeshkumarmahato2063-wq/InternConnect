@@ -29,7 +29,6 @@ import {
   SlidersHorizontal,
   RefreshCw
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import InterviewSchedulerModal from '../../components/Modals/InterviewSchedulerModal';
@@ -301,10 +300,7 @@ const ApplicantManagement = () => {
   };
 
   return (
-    <DashboardLayout
-      title="AI Recruiter Dashboard & Candidate Ranking"
-      subtitle="Automated Gemini AI candidate evaluation, 0–100 score breakdowns, gold/silver/bronze candidate ranking, and customized interview question kits."
-    >
+    <div className="space-y-6">
       {/* Toast Notification Banner */}
       <AnimatePresence>
         {toastMessage && (
@@ -898,7 +894,7 @@ const ApplicantManagement = () => {
           handleUpdateStatus(cand, 'Rejected', feedbackText);
         }}
       />
-    </DashboardLayout>
+    </div>
   );
 };
 

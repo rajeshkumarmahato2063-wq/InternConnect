@@ -1,7 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Users, Building2, Briefcase, CheckCircle, AlertTriangle, TrendingUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import DashboardLayout from '../../layouts/DashboardLayout';
+
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import { MOCK_COMPANIES, MOCK_INTERNSHIPS, MOCK_USERS } from '../../services/mockData';
@@ -10,11 +9,7 @@ const AdminDashboard = () => {
   const pendingCompanies = MOCK_COMPANIES.filter((c) => !c.verified);
 
   return (
-    <DashboardLayout
-      title="System Admin Control Center"
-      subtitle="Monitor platform activity, moderate employer verification queues, user accounts, and analytics."
-    >
-      <div className="space-y-8">
+    <div className="space-y-8">
         
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -114,7 +109,6 @@ const AdminDashboard = () => {
         )}
 
       </div>
-    </DashboardLayout>
   );
 };
 

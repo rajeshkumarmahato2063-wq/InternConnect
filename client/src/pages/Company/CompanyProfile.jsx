@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Upload,
 } from 'lucide-react';
-import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import UserAvatar from '../../components/Common/UserAvatar';
@@ -66,7 +65,6 @@ const CompanyProfile = () => {
           location: profileData.headquarters || '',
         });
       } else {
-        // Fallback to user metadata if company profile row isn't initialized yet
         setCompanyDetails({
           name: user?.name || '',
           logo: user?.avatar || '',
@@ -89,6 +87,7 @@ const CompanyProfile = () => {
   const renderStatusBadge = () => {
     switch (verification.status) {
       case 'Approved':
+      case 'verified':
         return (
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -113,131 +112,126 @@ const CompanyProfile = () => {
   };
 
   return (
-    <DashboardLayout
-      title="Company Profile & Recruiter Settings"
-      subtitle="Manage employer branding, tax documents, and platform verification status."
-    >
-      <div className="space-y-8">
-        {/* Verification Status Banner */}
-        <Card
-          variant="glass"
-          className={`p-6 border ${
-            verification.status === 'Approved'
-              ? 'border-emerald-500/30 bg-emerald-950/20'
-              : verification.status === 'Rejected'
-              ? 'border-rose-500/30 bg-rose-950/20'
-              : 'border-amber-500/30 bg-amber-950/20'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 shrink-0">
-                <ShieldCheck
-                  className={`w-6 h-6 ${
-                    verification.status === 'Approved'
-                      ? 'text-emerald-400'
-                      : verification.status === 'Rejected'
-                      ? 'text-rose-400'
-                      : 'text-amber-400'
-                  }`}
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white">Employer Verification Status</h3>
-                  {renderStatusBadge()}
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  {verification.status === 'Approved'
-                    ? 'Your company is verified! Your posted internships receive priority placement on Explore.'
+    <div className="space-y-8">
+      {/* Verification Status Banner */}
+      <Card
+        variant="glass"
+        className={`p-6 border ${
+          verification.status === 'Approved' || verification.status === 'verified'
+            ? 'border-emerald-500/30 bg-emerald-950/20'
+            : verification.status === 'Rejected'
+            ? 'border-rose-500/30 bg-rose-950/20'
+            : 'border-amber-500/30 bg-amber-950/20'
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 shrink-0">
+              <ShieldCheck
+                className={`w-6 h-6 ${
+                  verification.status === 'Approved' || verification.status === 'verified'
+                    ? 'text-emerald-400'
                     : verification.status === 'Rejected'
-                    ? 'Your corporate registration documents require update. Please submit revised credentials.'
-                    : 'Your corporate registration documents have been submitted and are under review by Admin.'}
-                </p>
-              </div>
-            </div>
-
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowModal(true)}
-              icon={Upload}
-              className="shrink-0 border-indigo-500/30 text-indigo-300 font-bold"
-            >
-              {verification.status === 'Approved' ? 'Update Credentials' : 'Upload Verification Docs'}
-            </Button>
-          </div>
-        </Card>
-
-        {/* Employer Main Card */}
-        <Card variant="glass" className="p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                name={companyDetails.name || user?.email}
-                email={user?.email}
-                src={companyDetails.logo}
-                size="2xl"
+                    ? 'text-rose-400'
+                    : 'text-amber-400'
+                }`}
               />
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-bold text-white">
-                    {companyDetails.name || 'Complete Company Profile'}
-                  </h2>
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  {companyDetails.industry || 'Industry Not Specified'} • {companyDetails.size || 'Size Not Specified'}
-                </p>
-              </div>
             </div>
-
-            <Button variant="secondary" size="sm" onClick={() => setShowModal(true)}>
-              Edit Employer Brand
-            </Button>
-          </div>
-
-          <div className="py-6 space-y-4 text-xs text-slate-300 leading-relaxed">
             <div>
-              <h4 className="font-bold text-white text-sm mb-1">About Company</h4>
-              <p className={!companyDetails.description ? 'text-slate-500 italic' : ''}>
-                {companyDetails.description || 'No company description added yet. Click "Edit Employer Brand" to complete.'}
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-white">Employer Verification Status</h3>
+                {renderStatusBadge()}
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                {verification.status === 'Approved' || verification.status === 'verified'
+                  ? 'Your company is verified! Your posted internships receive priority placement on Explore.'
+                  : verification.status === 'Rejected'
+                  ? 'Your corporate registration documents require update. Please submit revised credentials.'
+                  : 'Your corporate registration documents have been submitted and are under review by Admin.'}
               </p>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowModal(true)}
+            icon={Upload}
+            className="shrink-0 border-indigo-500/30 text-indigo-300 font-bold"
+          >
+            {verification.status === 'Approved' || verification.status === 'verified' ? 'Update Credentials' : 'Upload Verification Docs'}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Employer Main Card */}
+      <Card variant="glass" className="p-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+          <div className="flex items-center gap-4">
+            <UserAvatar
+              name={companyDetails.name || user?.email}
+              email={user?.email}
+              src={companyDetails.logo}
+              size="2xl"
+            />
+            <div>
               <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-indigo-400" />
-                <span>
-                  Website:{' '}
-                  {companyDetails.website ? (
-                    <a
-                      href={companyDetails.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-indigo-400 hover:underline"
-                    >
-                      {companyDetails.website}
-                    </a>
-                  ) : (
-                    <span className="text-slate-500 italic">Not specified</span>
-                  )}
-                </span>
+                <h2 className="text-2xl font-bold text-white">
+                  {companyDetails.name || 'Complete Company Profile'}
+                </h2>
               </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-purple-400" />
-                <span>
-                  Headquarters:{' '}
-                  {companyDetails.location ? (
-                    companyDetails.location
-                  ) : (
-                    <span className="text-slate-500 italic">Not specified</span>
-                  )}
-                </span>
-              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                {companyDetails.industry || 'Industry Not Specified'} • {companyDetails.size || 'Size Not Specified'}
+              </p>
             </div>
           </div>
-        </Card>
-      </div>
+
+          <Button variant="secondary" size="sm" onClick={() => setShowModal(true)}>
+            Edit Employer Brand
+          </Button>
+        </div>
+
+        <div className="py-6 space-y-4 text-xs text-slate-300 leading-relaxed">
+          <div>
+            <h4 className="font-bold text-white text-sm mb-1">About Organization</h4>
+            <p className={!companyDetails.description ? 'text-slate-500 italic' : ''}>
+              {companyDetails.description || 'No company description added yet. Click "Edit Employer Brand" to complete.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-indigo-400" />
+              <span>
+                Website:{' '}
+                {companyDetails.website ? (
+                  <a
+                    href={companyDetails.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-indigo-400 hover:underline"
+                  >
+                    {companyDetails.website}
+                  </a>
+                ) : (
+                  <span className="text-slate-500 italic">Not specified</span>
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-purple-400" />
+              <span>
+                Headquarters:{' '}
+                {companyDetails.location ? (
+                  companyDetails.location
+                ) : (
+                  <span className="text-slate-500 italic">Not specified</span>
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Verification Submission Modal */}
       <VerificationModal
@@ -245,7 +239,7 @@ const CompanyProfile = () => {
         onClose={() => setShowModal(false)}
         onSubmitted={loadStatusAndProfile}
       />
-    </DashboardLayout>
+    </div>
   );
 };
 
