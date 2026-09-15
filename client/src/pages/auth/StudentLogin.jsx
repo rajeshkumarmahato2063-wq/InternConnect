@@ -9,10 +9,10 @@ import PasswordInput from '../../components/Auth/PasswordInput';
 import LoadingButton from '../../components/Auth/LoadingButton';
 import { useAuth } from '../../context/AuthContext';
 
-// Zod validation schema
+// Production Zod validation schema
 const loginSchema = z.object({
   email: z.string().min(1, 'Email address is required').email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(1, 'Password is required'),
   rememberMe: z.boolean().optional(),
 });
 
@@ -28,9 +28,9 @@ const StudentLogin = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'aarav.sharma@example.com',
-      password: 'password123',
-      rememberMe: true,
+      email: '',
+      password: '',
+      rememberMe: false,
     },
   });
 
@@ -46,7 +46,7 @@ const StudentLogin = () => {
 
       navigate('/student/dashboard');
     } catch (err) {
-      setServerError(err.message || 'Invalid credentials. Please try again.');
+      setServerError(err.message || 'Invalid email or password. Please try again.');
     }
   };
 
@@ -83,8 +83,9 @@ const StudentLogin = () => {
               <Mail className="w-4 h-4 text-indigo-400 absolute left-3.5 top-3.5" />
               <input
                 type="email"
-                placeholder="aarav@college.edu"
+                placeholder="Enter your student email"
                 {...register('email')}
+                disabled={isSubmitting}
                 className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                   errors.email
                     ? 'border-rose-500 focus:ring-1 focus:ring-rose-500'
@@ -99,8 +100,10 @@ const StudentLogin = () => {
           <PasswordInput
             label="Password"
             name="password"
+            placeholder="Enter your password"
             register={register}
             error={errors.password}
+            disabled={isSubmitting}
           />
 
           {/* Remember Me & Forgot Password */}
@@ -109,13 +112,14 @@ const StudentLogin = () => {
               <input
                 type="checkbox"
                 {...register('rememberMe')}
-                className="rounded text-indigo-600 focus:ring-indigo-500"
+                disabled={isSubmitting}
+                className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
               />
               <span>Remember me</span>
             </label>
 
             <Link
-              to="/auth/forgot-password"
+              to="/forgot-password"
               className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
             >
               Forgot Password?
@@ -123,14 +127,14 @@ const StudentLogin = () => {
           </div>
 
           {/* Submit */}
-          <LoadingButton loading={isSubmitting} type="submit" variant="primary">
+          <LoadingButton loading={isSubmitting} disabled={isSubmitting} type="submit" variant="primary">
             Sign In to Student Dashboard
           </LoadingButton>
 
           {/* Registration Redirect */}
           <div className="pt-4 text-center text-xs text-slate-400">
             Don't have a student account yet?{' '}
-            <Link to="/auth/student/register" className="text-indigo-400 font-bold hover:underline">
+            <Link to="/register/student" className="text-indigo-400 font-bold hover:underline">
               Create Student Profile
             </Link>
           </div>

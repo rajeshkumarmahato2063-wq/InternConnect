@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, GraduationCap, BookOpen, Calendar, AlertCircle } from 'lucide-react';
+import { User, Mail, Phone, GraduationCap, BookOpen, Calendar, Code, AlertCircle } from 'lucide-react';
 import AuthLayout from '../../layouts/AuthLayout';
 import PasswordInput from '../../components/Auth/PasswordInput';
 import LoadingButton from '../../components/Auth/LoadingButton';
@@ -14,10 +14,11 @@ const studentRegisterSchema = z
   .object({
     fullName: z.string().min(2, 'Full Name is required'),
     email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-    phone: z.string().regex(/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'),
+    phone: z.string().optional(),
     college: z.string().min(2, 'College/University name is required'),
     degree: z.string().min(2, 'Degree & Major is required'),
     graduationYear: z.coerce.number().min(2024, 'Graduation year must be valid'),
+    skills: z.string().optional(),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string().min(6, 'Please confirm your password'),
   })
@@ -44,6 +45,7 @@ const StudentRegister = () => {
       college: '',
       degree: '',
       graduationYear: 2026,
+      skills: '',
       password: '',
       confirmPassword: '',
     },
@@ -52,21 +54,27 @@ const StudentRegister = () => {
   const onSubmit = async (data) => {
     setServerError('');
     try {
+      const skillsArray = data.skills
+        ? data.skills.split(',').map((s) => s.trim()).filter(Boolean)
+        : [];
+
       await registerAuth(
         {
-          name: data.fullName,
+          fullName: data.fullName,
           email: data.email,
           phone: data.phone,
           college: data.college,
           degree: data.degree,
           graduationYear: data.graduationYear,
+          skills: skillsArray,
+          password: data.password,
         },
         'student'
       );
 
       navigate('/student/dashboard');
     } catch (err) {
-      setServerError(err.message || 'Registration failed. Please try again.');
+      setServerError(err.message || 'Registration failed. Please check your information and try again.');
     }
   };
 
@@ -88,14 +96,15 @@ const StudentRegister = () => {
           {/* Full Name */}
           <div className="space-y-1 text-xs">
             <label className="block font-semibold uppercase tracking-wider text-slate-300">
-              Full Name
+              Full Name *
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-indigo-400 absolute left-3.5 top-3.5" />
               <input
                 type="text"
-                placeholder="Aarav Sharma"
+                placeholder="Enter your full name"
                 {...register('fullName')}
+                disabled={isSubmitting}
                 className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                   errors.fullName ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
                 }`}
@@ -108,14 +117,15 @@ const StudentRegister = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1 text-xs">
               <label className="block font-semibold uppercase tracking-wider text-slate-300">
-                Email Address
+                Email Address *
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-indigo-400 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
-                  placeholder="aarav@college.edu"
+                  placeholder="Enter your student email"
                   {...register('email')}
+                  disabled={isSubmitting}
                   className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                     errors.email ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
                   }`}
@@ -126,14 +136,15 @@ const StudentRegister = () => {
 
             <div className="space-y-1 text-xs">
               <label className="block font-semibold uppercase tracking-wider text-slate-300">
-                Phone Number (10 Digits)
+                Phone Number (Optional)
               </label>
               <div className="relative">
                 <Phone className="w-4 h-4 text-purple-400 absolute left-3.5 top-3.5" />
                 <input
                   type="tel"
-                  placeholder="9876543210"
+                  placeholder="Enter 10-digit phone number"
                   {...register('phone')}
+                  disabled={isSubmitting}
                   className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                     errors.phone ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
                   }`}
@@ -147,14 +158,15 @@ const StudentRegister = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1 text-xs">
               <label className="block font-semibold uppercase tracking-wider text-slate-300">
-                College / University
+                College / University *
               </label>
               <div className="relative">
                 <GraduationCap className="w-4 h-4 text-emerald-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
-                  placeholder="IIT Delhi"
+                  placeholder="Enter your university or college"
                   {...register('college')}
+                  disabled={isSubmitting}
                   className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                     errors.college ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
                   }`}
@@ -165,14 +177,15 @@ const StudentRegister = () => {
 
             <div className="space-y-1 text-xs">
               <label className="block font-semibold uppercase tracking-wider text-slate-300">
-                Degree & Major
+                Degree & Major *
               </label>
               <div className="relative">
                 <BookOpen className="w-4 h-4 text-blue-400 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
-                  placeholder="B.Tech in Computer Science"
+                  placeholder="e.g. B.Tech Computer Science"
                   {...register('degree')}
+                  disabled={isSubmitting}
                   className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                     errors.degree ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
                   }`}
@@ -182,46 +195,69 @@ const StudentRegister = () => {
             </div>
           </div>
 
-          {/* Graduation Year */}
-          <div className="space-y-1 text-xs">
-            <label className="block font-semibold uppercase tracking-wider text-slate-300">
-              Expected Graduation Year
-            </label>
-            <div className="relative">
-              <Calendar className="w-4 h-4 text-amber-400 absolute left-3.5 top-3.5" />
-              <input
-                type="number"
-                placeholder="2026"
-                {...register('graduationYear')}
-                className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
-                  errors.graduationYear ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                }`}
-              />
+          {/* Graduation Year & Skills */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1 text-xs">
+              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+                Expected Graduation Year *
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-amber-400 absolute left-3.5 top-3.5" />
+                <input
+                  type="number"
+                  placeholder="e.g. 2026"
+                  {...register('graduationYear')}
+                  disabled={isSubmitting}
+                  className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
+                    errors.graduationYear ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
+                  }`}
+                />
+              </div>
+              {errors.graduationYear && (
+                <p className="text-rose-400 font-medium text-[11px]">{errors.graduationYear.message}</p>
+              )}
             </div>
-            {errors.graduationYear && (
-              <p className="text-rose-400 font-medium text-[11px]">{errors.graduationYear.message}</p>
-            )}
+
+            <div className="space-y-1 text-xs">
+              <label className="block font-semibold uppercase tracking-wider text-slate-300">
+                Skills (Optional, comma-separated)
+              </label>
+              <div className="relative">
+                <Code className="w-4 h-4 text-cyan-400 absolute left-3.5 top-3.5" />
+                <input
+                  type="text"
+                  placeholder="e.g. React, Python, Java, SQL"
+                  {...register('skills')}
+                  disabled={isSubmitting}
+                  className="w-full rounded-xl bg-slate-900/90 border border-slate-800 focus:border-indigo-500 pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <PasswordInput
-              label="Password"
+              label="Password *"
               name="password"
+              placeholder="Enter password (min 6 chars)"
               register={register}
               error={errors.password}
+              disabled={isSubmitting}
             />
             <PasswordInput
-              label="Confirm Password"
+              label="Confirm Password *"
               name="confirmPassword"
+              placeholder="Re-enter password"
               register={register}
               error={errors.confirmPassword}
+              disabled={isSubmitting}
             />
           </div>
 
           {/* Submit Button */}
           <div className="pt-3">
-            <LoadingButton loading={isSubmitting} type="submit" variant="primary">
+            <LoadingButton loading={isSubmitting} disabled={isSubmitting} type="submit" variant="primary">
               Create Student Account
             </LoadingButton>
           </div>

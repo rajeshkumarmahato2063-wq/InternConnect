@@ -62,7 +62,7 @@ const ForgotPassword = () => {
               <Mail className="w-4 h-4 text-indigo-400 absolute left-3.5 top-3.5" />
               <input
                 type="email"
-                placeholder="your.email@example.com"
+                placeholder="Enter your account email"
                 {...register('email')}
                 className={`w-full rounded-xl bg-slate-900/90 border pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none transition-all ${
                   errors.email ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
@@ -78,7 +78,7 @@ const ForgotPassword = () => {
 
           <div className="pt-2 text-center text-xs text-slate-400">
             Remembered your password?{' '}
-            <Link to="/auth/select-role" className="text-indigo-400 font-bold hover:underline">
+            <Link to="/auth/student/login" className="text-indigo-400 font-bold hover:underline">
               Back to Login
             </Link>
           </div>

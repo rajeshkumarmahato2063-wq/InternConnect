@@ -67,17 +67,17 @@ export const AuthProvider = ({ children }) => {
       const completion = calculateProfileCompletion(userProfile);
       const updatedUser = {
         id: authUser.id,
-        name: userProfile.full_name || 'Aarav Sharma',
-        email: authUser.email || 'aarav.sharma@example.com',
-        role: 'student',
-        college: userProfile.college,
-        degree: userProfile.degree,
-        graduationYear: userProfile.graduation_year,
-        skills: userProfile.skills || [],
-        github: userProfile.github,
-        linkedin: userProfile.linkedin,
-        portfolio: userProfile.portfolio,
-        avatar: userProfile.avatar_url,
+        name: userProfile.full_name || authUser.user_metadata?.full_name || 'Student Candidate',
+        email: authUser.email || '',
+        role: authUser.user_metadata?.role || 'student',
+        college: userProfile.college || authUser.user_metadata?.college || '',
+        degree: userProfile.degree || authUser.user_metadata?.degree || '',
+        graduationYear: userProfile.graduation_year || 2026,
+        skills: userProfile.skills || authUser.user_metadata?.skills || [],
+        github: userProfile.github || '',
+        linkedin: userProfile.linkedin || '',
+        portfolio: userProfile.portfolio || '',
+        avatar: userProfile.avatar_url || '',
         profileCompletion: completion,
       };
       setUser(updatedUser);
@@ -88,8 +88,8 @@ export const AuthProvider = ({ children }) => {
   const isAuthenticated = Boolean((token || session) && user);
   const currentRole = user?.role || 'student';
 
-  // Login handler
-  const login = async ({ email, password, role = 'student' }) => {
+  // Production Login handler using Supabase Auth
+  const login = async ({ email, password, role = 'student', rememberMe = true }) => {
     setLoading(true);
 
     try {
@@ -98,73 +98,70 @@ export const AuthProvider = ({ children }) => {
         password,
       });
 
-      if (!error && data?.session) {
+      if (error) {
+        setLoading(false);
+        throw new Error(error.message || 'Invalid email or password. Please try again.');
+      }
+
+      if (data?.session) {
         setSession(data.session);
         setToken(data.session.access_token);
         await fetchAndSetProfile(data.user);
+
+        if (rememberMe) {
+          localStorage.setItem('ic_jwt_token', data.session.access_token);
+        } else {
+          localStorage.removeItem('ic_jwt_token');
+        }
+
         setLoading(false);
         return { token: data.session.access_token, user: data.user };
       }
     } catch (err) {
-      console.warn('Supabase login fallback:', err.message);
+      setLoading(false);
+      throw err;
     }
-
-    // Fallback simulated login
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const authenticatedUser = {
-      ...MOCK_USERS[0],
-      email,
-      role,
-    };
-    const simulatedJwt = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.simulatedToken`;
-    setToken(simulatedJwt);
-    setUser(authenticatedUser);
-    localStorage.setItem('ic_jwt_token', simulatedJwt);
-    localStorage.setItem('ic_user_info', JSON.stringify(authenticatedUser));
-    setLoading(false);
-
-    return { token: simulatedJwt, user: authenticatedUser };
   };
 
-  // Register handler
+  // Production Register handler using Supabase Auth
   const register = async (userData, role = 'student') => {
     setLoading(true);
 
     try {
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
-        password: userData.password || 'password123',
+        password: userData.password,
         options: {
           data: {
             full_name: userData.fullName || userData.name,
+            college: userData.college,
+            degree: userData.degree,
+            graduation_year: userData.graduationYear,
+            skills: userData.skills || [],
+            role: role,
           },
         },
       });
 
-      if (!error && data?.user) {
+      if (error) {
+        setLoading(false);
+        throw new Error(error.message || 'Registration failed. Please check your information and try again.');
+      }
+
+      if (data?.user) {
+        if (data.session) {
+          setSession(data.session);
+          setToken(data.session.access_token);
+          localStorage.setItem('ic_jwt_token', data.session.access_token);
+        }
         await fetchAndSetProfile(data.user);
         setLoading(false);
-        return { user: data.user };
+        return { user: data.user, session: data.session };
       }
     } catch (err) {
-      console.warn('Supabase register fallback:', err.message);
+      setLoading(false);
+      throw err;
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    const newUser = {
-      id: `usr_${role}_${Date.now()}`,
-      role,
-      profileCompletion: 75,
-      ...userData,
-    };
-    const simulatedJwt = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.simulatedToken`;
-    setToken(simulatedJwt);
-    setUser(newUser);
-    localStorage.setItem('ic_jwt_token', simulatedJwt);
-    localStorage.setItem('ic_user_info', JSON.stringify(newUser));
-    setLoading(false);
-
-    return { token: simulatedJwt, user: newUser };
   };
 
   const logout = async () => {

@@ -16,18 +16,16 @@ const StudentProfile = () => {
   const [successToast, setSuccessToast] = useState(false);
 
   const [formData, setFormData] = useState({
-    full_name: user?.name || 'Aarav Sharma',
-    phone: user?.phone || '+91 98765 43210',
-    college: user?.college || 'IIT Delhi',
-    degree: user?.degree || 'B.Tech in Computer Science',
-    graduation_year: user?.graduationYear || 2025,
-    skills: user?.skills || ['React.js', 'Node.js', 'Python', 'TypeScript', 'Tailwind CSS'],
-    github: user?.github || 'https://github.com/aarav-sharma',
-    linkedin: user?.linkedin || 'https://linkedin.com/in/aarav-sharma',
-    portfolio: user?.portfolio || 'https://aaravsharma.dev',
-    avatar_url:
-      user?.avatar ||
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    full_name: user?.name || '',
+    phone: user?.phone || '',
+    college: user?.college || '',
+    degree: user?.degree || '',
+    graduation_year: user?.graduationYear || 2026,
+    skills: user?.skills || [],
+    github: user?.github || '',
+    linkedin: user?.linkedin || '',
+    portfolio: user?.portfolio || '',
+    avatar_url: user?.avatar || '',
   });
 
   const handleSave = async (e) => {

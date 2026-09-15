@@ -87,9 +87,11 @@ function App() {
               <Route path="/auth/select-role" element={<AuthRoleSelect />} />
               <Route path="/auth/student/login" element={<StudentLogin />} />
               <Route path="/auth/student/register" element={<StudentRegister />} />
+              <Route path="/register/student" element={<StudentRegister />} />
               <Route path="/auth/company/login" element={<CompanyLogin />} />
               <Route path="/auth/company/register" element={<CompanyRegister />} />
               <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/auth/verify-email" element={<VerifyEmail />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/portfolio/:username" element={<PublicPortfolio />} />

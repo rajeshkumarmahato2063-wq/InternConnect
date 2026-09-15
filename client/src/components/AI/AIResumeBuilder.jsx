@@ -8,15 +8,15 @@ import { useAuth } from '../../context/AuthContext';
 const AIResumeBuilder = () => {
   const { user } = useAuth();
   const [template, setTemplate] = useState('modern'); // modern, classic, minimal
-  const [fullName, setFullName] = useState(user?.name || 'Aarav Sharma');
-  const [email, setEmail] = useState(user?.email || 'aarav.sharma@example.com');
-  const [phone, setPhone] = useState(user?.phone || '+91 98765 43210');
-  const [college, setCollege] = useState(user?.college || 'IIT Delhi');
-  const [degree, setDegree] = useState(user?.degree || 'B.Tech in Computer Science');
-  const [skills, setSkills] = useState(user?.skills || ['React.js', 'Node.js', 'Python', 'TypeScript', 'Tailwind CSS']);
+  const [fullName, setFullName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [college, setCollege] = useState(user?.college || '');
+  const [degree, setDegree] = useState(user?.degree || '');
+  const [skills, setSkills] = useState(user?.skills || []);
   const [newSkill, setNewSkill] = useState('');
   const [summary, setSummary] = useState(
-    'Ambitious Software Engineering student with expertise in React, TypeScript, and full-stack web applications. Demonstrated ability to deliver clean, production-ready code.'
+    user?.summary || ''
   );
 
   const addSkill = () => {

@@ -27,9 +27,9 @@ const CompanyLogin = () => {
   } = useForm({
     resolver: zodResolver(companyLoginSchema),
     defaultValues: {
-      email: 'recruiter@microsoft.com',
-      password: 'password123',
-      rememberMe: true,
+      email: '',
+      password: '',
+      rememberMe: false,
     },
   });
 
