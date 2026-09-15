@@ -14,10 +14,11 @@ import {
 import DashboardLayout from '../../layouts/DashboardLayout';
 import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
+import UserAvatar from '../../components/Common/UserAvatar';
 import VerificationModal from '../../components/Company/VerificationModal';
 import { companyVerificationService } from '../../services/companyVerificationService';
 import { useAuth } from '../../context/AuthContext';
-import { MOCK_COMPANIES } from '../../services/mockData';
+import { supabase } from '../../services/supabaseClient';
 
 const CompanyProfile = () => {
   const { user } = useAuth();
@@ -27,25 +28,62 @@ const CompanyProfile = () => {
     verifiedAt: null,
   });
   const [showModal, setShowModal] = useState(false);
+  const [companyDetails, setCompanyDetails] = useState({
+    name: user?.name || '',
+    logo: user?.avatar || '',
+    industry: '',
+    size: '',
+    description: '',
+    website: '',
+    location: '',
+  });
 
-  const companyId = user?.id || 'comp_demo';
-  const company = {
-    name: user?.name || MOCK_COMPANIES[1].name,
-    logo: user?.avatar || MOCK_COMPANIES[1].logo,
-    industry: MOCK_COMPANIES[1].industry,
-    size: MOCK_COMPANIES[1].size,
-    description: MOCK_COMPANIES[1].description,
-    website: user?.portfolio || MOCK_COMPANIES[1].website,
-    location: MOCK_COMPANIES[1].location,
-  };
+  const companyId = user?.id;
 
-  const loadStatus = async () => {
+  const loadStatusAndProfile = async () => {
+    if (!companyId) return;
+
+    // Load verification status
     const data = await companyVerificationService.getVerificationStatus(companyId);
     if (data) setVerification(data);
+
+    // Load company profile from Supabase
+    try {
+      const { data: profileData } = await supabase
+        .from('company_profiles')
+        .select('*')
+        .eq('user_id', companyId)
+        .maybeSingle();
+
+      if (profileData) {
+        setCompanyDetails({
+          name: profileData.company_name || user?.name || '',
+          logo: profileData.logo_url || user?.avatar || '',
+          industry: profileData.industry || '',
+          size: profileData.company_size || '',
+          description: profileData.description || '',
+          website: profileData.website_url || '',
+          location: profileData.headquarters || '',
+        });
+      } else {
+        // Fallback to user metadata if company profile row isn't initialized yet
+        setCompanyDetails({
+          name: user?.name || '',
+          logo: user?.avatar || '',
+          industry: '',
+          size: '',
+          description: 'No company description added yet. Edit employer brand to complete your company page.',
+          website: '',
+          location: '',
+        });
+      }
+    } catch (err) {
+      console.warn('Could not fetch company profile:', err);
+    }
   };
 
   useEffect(() => {
-    loadStatus();
+    loadStatusAndProfile();
   }, [companyId]);
 
   const renderStatusBadge = () => {
@@ -77,7 +115,7 @@ const CompanyProfile = () => {
   return (
     <DashboardLayout
       title="Company Profile & Recruiter Settings"
-      subtitle="Manage employer branding, tax documents, and issue platform verification badges."
+      subtitle="Manage employer branding, tax documents, and platform verification status."
     >
       <div className="space-y-8">
         {/* Verification Status Banner */}
@@ -114,7 +152,7 @@ const CompanyProfile = () => {
                     ? 'Your company is verified! Your posted internships receive priority placement on Explore.'
                     : verification.status === 'Rejected'
                     ? 'Your corporate registration documents require update. Please submit revised credentials.'
-                    : 'Your corporate registration documents have been submitted and are under active review by Admin.'}
+                    : 'Your corporate registration documents have been submitted and are under review by Admin.'}
                 </p>
               </div>
             </div>
@@ -135,17 +173,20 @@ const CompanyProfile = () => {
         <Card variant="glass" className="p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
             <div className="flex items-center gap-4">
-              <img
-                src={company.logo}
-                alt={company.name}
-                className="w-16 h-16 rounded-2xl object-contain bg-white p-2 shadow-lg shrink-0"
+              <UserAvatar
+                name={companyDetails.name || user?.email}
+                email={user?.email}
+                src={companyDetails.logo}
+                size="2xl"
               />
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-bold text-white">{company.name}</h2>
+                  <h2 className="text-2xl font-bold text-white">
+                    {companyDetails.name || 'Complete Company Profile'}
+                  </h2>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  {company.industry} • {company.size}
+                  {companyDetails.industry || 'Industry Not Specified'} • {companyDetails.size || 'Size Not Specified'}
                 </p>
               </div>
             </div>
@@ -158,7 +199,9 @@ const CompanyProfile = () => {
           <div className="py-6 space-y-4 text-xs text-slate-300 leading-relaxed">
             <div>
               <h4 className="font-bold text-white text-sm mb-1">About Company</h4>
-              <p>{company.description}</p>
+              <p className={!companyDetails.description ? 'text-slate-500 italic' : ''}>
+                {companyDetails.description || 'No company description added yet. Click "Edit Employer Brand" to complete.'}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-800">
@@ -166,19 +209,30 @@ const CompanyProfile = () => {
                 <Globe className="w-4 h-4 text-indigo-400" />
                 <span>
                   Website:{' '}
-                  <a
-                    href={company.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-indigo-400 hover:underline"
-                  >
-                    {company.website}
-                  </a>
+                  {companyDetails.website ? (
+                    <a
+                      href={companyDetails.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-indigo-400 hover:underline"
+                    >
+                      {companyDetails.website}
+                    </a>
+                  ) : (
+                    <span className="text-slate-500 italic">Not specified</span>
+                  )}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-purple-400" />
-                <span>Headquarters: {company.location}</span>
+                <span>
+                  Headquarters:{' '}
+                  {companyDetails.location ? (
+                    companyDetails.location
+                  ) : (
+                    <span className="text-slate-500 italic">Not specified</span>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -189,7 +243,7 @@ const CompanyProfile = () => {
       <VerificationModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onSubmitted={loadStatus}
+        onSubmitted={loadStatusAndProfile}
       />
     </DashboardLayout>
   );

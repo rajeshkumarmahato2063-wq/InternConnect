@@ -4,10 +4,10 @@ import { supabase } from './supabaseClient';
  * Calculate dynamic profile completion percentage (0-100%)
  */
 export const calculateProfileCompletion = (profile) => {
-  if (!profile) return 30;
+  if (!profile) return 0;
 
   let score = 0;
-  if (profile.full_name) score += 10;
+  if (profile.full_name) score += 15;
   if (profile.phone) score += 10;
   if (profile.college) score += 15;
   if (profile.degree) score += 15;
@@ -15,9 +15,9 @@ export const calculateProfileCompletion = (profile) => {
   if (profile.skills && profile.skills.length > 0) score += 15;
   if (profile.github) score += 10;
   if (profile.linkedin) score += 10;
-  if (profile.portfolio) score += 5;
+  if (profile.portfolio) score += 0;
 
-  return Math.min(100, Math.max(20, score));
+  return Math.min(100, score);
 };
 
 export const profileService = {
@@ -53,20 +53,19 @@ export const profileService = {
       const existing = await profileService.getProfile(user.id);
       if (existing) return existing;
 
+      // Clean initial profile using user metadata or empty values
       const initialProfile = {
         id: user.id,
-        full_name: user.user_metadata?.full_name || user.name || 'Aarav Sharma',
-        phone: user.phone || '+91 98765 43210',
-        college: 'IIT Delhi',
-        degree: 'B.Tech in Computer Science',
-        graduation_year: 2025,
-        skills: ['React.js', 'Node.js', 'Python', 'TypeScript', 'Tailwind CSS'],
-        github: 'https://github.com/aarav-sharma',
-        linkedin: 'https://linkedin.com/in/aarav-sharma',
-        portfolio: 'https://aaravsharma.dev',
-        avatar_url:
-          user.user_metadata?.avatar_url ||
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+        full_name: user.user_metadata?.full_name || user.name || '',
+        phone: user.phone || '',
+        college: user.user_metadata?.college || '',
+        degree: user.user_metadata?.degree || '',
+        graduation_year: user.user_metadata?.graduation_year || 2026,
+        skills: user.user_metadata?.skills || [],
+        github: '',
+        linkedin: '',
+        portfolio: '',
+        avatar_url: user.user_metadata?.avatar_url || '',
         updated_at: new Date().toISOString(),
       };
 

@@ -6,7 +6,6 @@ import Card from '../../components/Card/Card';
 import Button from '../../components/Button/Button';
 import EmptyState from '../../components/Common/EmptyState';
 import { useAuth } from '../../context/AuthContext';
-import { MOCK_INTERNSHIPS } from '../../services/mockData';
 import { internshipService } from '../../services/internshipService';
 
 const SavedJobs = () => {
@@ -19,15 +18,10 @@ const SavedJobs = () => {
       setLoading(true);
       if (user?.id) {
         const jobs = await internshipService.getUserSavedJobs(user.id);
-        if (jobs && jobs.length > 0) {
-          setBookmarkedInternships(jobs);
-          setLoading(false);
-          return;
-        }
+        setBookmarkedInternships(jobs || []);
+      } else {
+        setBookmarkedInternships([]);
       }
-      // Fallback to local saved IDs matched against MOCK
-      const fallback = MOCK_INTERNSHIPS.filter((j) => savedJobs.includes(j.id));
-      setBookmarkedInternships(fallback);
       setLoading(false);
     };
     fetchSaved();
@@ -47,8 +41,8 @@ const SavedJobs = () => {
         <EmptyState
           icon={Bookmark}
           title="No Saved Internships"
-          description="You haven't bookmarked any jobs yet. Browse available listings and save your favorites!"
-          actionLabel="Explore Internships"
+          description="You haven't saved any internships yet. Browse available listings and bookmark your top choices!"
+          actionLabel="Browse Internships"
           onAction={() => (window.location.href = '/explore')}
         />
       ) : (
@@ -61,11 +55,17 @@ const SavedJobs = () => {
               className="p-6 flex flex-col sm:flex-row items-start justify-between gap-4 border-slate-800"
             >
               <div className="flex items-start gap-4">
-                <img
-                  src={job.companyLogo}
-                  alt={job.companyName}
-                  className="w-14 h-14 rounded-2xl object-contain bg-white p-1.5 shadow-md shrink-0"
-                />
+                {job.companyLogo ? (
+                  <img
+                    src={job.companyLogo}
+                    alt={job.companyName}
+                    className="w-14 h-14 rounded-2xl object-contain bg-white p-1.5 shadow-md shrink-0"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shrink-0">
+                    {(job.companyName || 'C').charAt(0)}
+                  </div>
+                )}
                 <div>
                   <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
                     {job.companyName}

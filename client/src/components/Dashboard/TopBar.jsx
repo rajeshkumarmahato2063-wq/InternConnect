@@ -3,6 +3,7 @@ import { Bell, Moon, Sun, Sparkles, User, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import UserAvatar from '../Common/UserAvatar';
 
 const TopBar = ({ title = 'Student Dashboard' }) => {
   const { user, logout } = useAuth();
@@ -15,7 +16,7 @@ const TopBar = ({ title = 'Student Dashboard' }) => {
       {/* Page Title */}
       <div>
         <h1 className="text-xl font-extrabold text-white tracking-tight">{title}</h1>
-        <p className="text-xs text-slate-400">Welcome back, {user?.name || 'Candidate'}!</p>
+        <p className="text-xs text-slate-400">Welcome back, {user?.name || user?.email || 'Candidate'}!</p>
       </div>
 
       {/* Right Controls */}
@@ -50,16 +51,9 @@ const TopBar = ({ title = 'Student Dashboard' }) => {
           to="/student/profile"
           className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-indigo-500/40 transition-all group"
         >
-          <img
-            src={
-              user?.avatar ||
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
-            }
-            alt={user?.name}
-            className="w-7 h-7 rounded-full object-cover border border-indigo-400/40"
-          />
+          <UserAvatar name={user?.name} email={user?.email} src={user?.avatar} size="xs" />
           <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors hidden sm:inline">
-            {user?.name || 'Aarav Sharma'}
+            {user?.name || user?.email || 'My Profile'}
           </span>
         </Link>
       </div>

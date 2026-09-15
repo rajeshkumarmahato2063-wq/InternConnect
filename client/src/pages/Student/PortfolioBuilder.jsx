@@ -40,8 +40,8 @@ const PortfolioBuilder = () => {
   const [newLive, setNewLive] = useState('');
   const [newImage, setNewImage] = useState('');
 
-  const studentId = user?.id || 'demo_student_id';
-  const username = user?.name ? user.name.toLowerCase().replace(/\s+/g, '-') : 'aarav-sharma';
+  const studentId = user?.id;
+  const username = user?.name ? user.name.toLowerCase().replace(/\s+/g, '-') : (user?.email ? user.email.split('@')[0] : 'candidate');
   const publicUrl = `${window.location.origin}/portfolio/${username}`;
 
   const loadProjects = async () => {

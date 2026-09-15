@@ -43,13 +43,13 @@ export const copilotService = {
 
   // Load user context memory (skills, college, saved jobs, recent applications)
   getUserContextMemory: async (userId, userRole = 'student') => {
-    if (!userId) return { name: 'Candidate', skills: [], college: '' };
+    if (!userId) return { name: '', skills: [], college: '' };
     try {
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       let savedJobs = [];
       let applications = [];
@@ -65,17 +65,17 @@ export const copilotService = {
       }
 
       return {
-        name: profile?.full_name || 'Candidate',
-        college: profile?.college || 'University',
-        degree: profile?.degree || 'Computer Science',
-        skills: profile?.skills || ['React', 'JavaScript', 'Git'],
-        companyName: profile?.company_name || 'Company',
+        name: profile?.full_name || '',
+        college: profile?.college || '',
+        degree: profile?.degree || '',
+        skills: Array.isArray(profile?.skills) ? profile.skills : [],
+        companyName: profile?.company_name || '',
         savedJobs,
         applications,
       };
     } catch (err) {
       console.warn('User context memory fetch warning:', err.message);
-      return { name: 'Candidate', skills: ['React', 'JavaScript'], college: 'University' };
+      return { name: '', skills: [], college: '' };
     }
   },
 

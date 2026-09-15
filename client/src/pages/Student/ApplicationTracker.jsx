@@ -9,7 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { internshipService } from '../../services/internshipService';
 
 const ApplicationTracker = () => {
-  const { user, applications: fallbackApps } = useAuth();
+  const { user } = useAuth();
   const [userApplications, setUserApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,39 +17,23 @@ const ApplicationTracker = () => {
     setLoading(true);
     if (user?.id) {
       const apps = await internshipService.getUserApplications(user.id);
-      if (apps && apps.length > 0) {
-        setUserApplications(apps);
-        setLoading(false);
-        return;
-      }
+      setUserApplications(apps || []);
+    } else {
+      setUserApplications([]);
     }
-    setUserApplications(fallbackApps || []);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchApplications();
 
-    // Subscribe to real-time application updates for student
-    const unsubscribe = internshipService.subscribeToApplications(user?.id, () => {
-      fetchApplications();
-    });
-
-    return () => unsubscribe();
-  }, [user, fallbackApps]);
-
-  const normalizeStatus = (st) => {
-    if (!st) return 'Applied';
-    if (st === 'Under Review') return 'Reviewing';
-    if (st === 'Interview Scheduled') return 'Interview';
-    return st;
-  };
-
-  const getStepIndex = (status) => {
-    const norm = normalizeStatus(status);
-    if (norm === 'Rejected') return -1;
-    return statusSteps.indexOf(norm);
-  };
+    if (user?.id) {
+      const unsubscribe = internshipService.subscribeToApplications(user.id, () => {
+        fetchApplications();
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   return (
     <DashboardLayout
@@ -62,14 +46,13 @@ const ApplicationTracker = () => {
         <EmptyState
           icon={FileText}
           title="No Applications Submitted"
-          description="You haven't submitted any internship applications yet. Explore listings and apply with 1-click!"
+          description="You haven't submitted any internship applications yet. Explore active listings and apply with 1-click!"
           actionLabel="Explore Jobs"
           onAction={() => (window.location.href = '/explore')}
         />
       ) : (
         <div className="space-y-6">
           {userApplications.map((app) => {
-            const currentStepIdx = getStepIndex(app.status);
             const isRejected = app.status === 'Rejected';
 
             return (
@@ -77,19 +60,25 @@ const ApplicationTracker = () => {
                 
                 {/* Top Info */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={app.companyLogo}
-                      alt={app.companyName}
-                      className="w-14 h-14 rounded-2xl object-contain bg-white p-1.5 shadow-md shrink-0"
-                    />
+                  <div className="flex items-start gap-4">
+                    {app.companyLogo ? (
+                      <img
+                        src={app.companyLogo}
+                        alt={app.companyName}
+                        className="w-14 h-14 rounded-2xl object-contain bg-white p-1.5 shadow-md shrink-0"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-extrabold text-xl shrink-0">
+                        {(app.companyName || 'C').charAt(0)}
+                      </div>
+                    )}
                     <div>
                       <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
                         {app.companyName}
                       </span>
                       <h3 className="text-lg font-bold text-white leading-snug">{app.jobTitle}</h3>
                       <p className="text-xs text-slate-400 mt-1">
-                        Applied on: {new Date(app.appliedAt).toLocaleDateString()} • Resume: {app.resumeName}
+                        Applied on: {new Date(app.appliedAt).toLocaleDateString()} • Resume: {app.resumeName || 'Primary Resume'}
                       </p>
                     </div>
                   </div>
@@ -115,14 +104,16 @@ const ApplicationTracker = () => {
                       <span className="flex items-center gap-1.5 text-indigo-300">
                         <Calendar className="w-4 h-4" /> Scheduled Technical Interview
                       </span>
-                      <a
-                        href={app.interviewDetails.meetingLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-[11px] hover:bg-indigo-500"
-                      >
-                        Launch Meeting &rarr;
-                      </a>
+                      {app.interviewDetails.meetingLink && (
+                        <a
+                          href={app.interviewDetails.meetingLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-[11px] hover:bg-indigo-500"
+                        >
+                          Launch Meeting &rarr;
+                        </a>
+                      )}
                     </div>
                     <p>📅 <strong>Date:</strong> {app.interviewDetails.date} | ⏰ <strong>Time:</strong> {app.interviewDetails.time}</p>
                     <p className="text-slate-400">Interviewer: {app.interviewDetails.interviewer}</p>

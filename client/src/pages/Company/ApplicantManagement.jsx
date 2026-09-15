@@ -38,6 +38,7 @@ import AIInterviewQuestionsModal from '../../components/Modals/AIInterviewQuesti
 import RejectionFeedbackModal from '../../components/Modals/RejectionFeedbackModal';
 import { useAuth } from '../../context/AuthContext';
 import { internshipService } from '../../services/internshipService';
+import UserAvatar from '../../components/Common/UserAvatar';
 import { emailService } from '../../services/emailService';
 import { aiRecruiterService } from '../../services/aiRecruiterService';
 import { notificationService } from '../../services/notificationService';
@@ -553,18 +554,13 @@ const ApplicantManagement = () => {
                       {/* Candidate Profile Info & AI Score Circle */}
                       <div className="flex items-start gap-4 flex-1">
                         {/* Avatar */}
-                        <div className="relative">
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 p-0.5 shadow-xl shrink-0">
-                            <img
-                              src={
-                                app.studentAvatar ||
-                                app.student?.avatar_url ||
-                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
-                              }
-                              alt={studentName}
-                              className="w-full h-full rounded-2xl object-cover"
-                            />
-                          </div>
+                        <div className="relative shrink-0">
+                          <UserAvatar
+                            name={studentName}
+                            src={app.studentAvatar || app.student?.avatar_url}
+                            size="lg"
+                            className="rounded-2xl"
+                          />
 
                           {/* Animated AI Score Circle Pill */}
                           <div className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-950 text-indigo-300 border border-indigo-500/50 shadow-md">

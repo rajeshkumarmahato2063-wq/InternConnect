@@ -4,9 +4,9 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import Card from '../components/Card/Card';
 import Button from '../components/Button/Button';
+import EmptyState from '../components/Common/EmptyState';
 import { useAuth } from '../context/AuthContext';
 import { internshipService } from '../services/internshipService';
-import { MOCK_INTERNSHIPS, MOCK_APPLICATIONS } from '../services/mockData';
 
 const CompanyDashboard = () => {
   const { user } = useAuth();
@@ -16,7 +16,7 @@ const CompanyDashboard = () => {
   const [shortlistedCount, setShortlistedCount] = useState(0);
   const [recentApplications, setRecentApplications] = useState([]);
   const [companyInterviews, setCompanyInterviews] = useState([]);
-  const [interviewFilter, setInterviewFilter] = useState('upcoming'); // 'today', 'upcoming', 'completed'
+  const [interviewFilter, setInterviewFilter] = useState('upcoming');
   const [loading, setLoading] = useState(true);
 
   const fetchCompanyData = async () => {
@@ -28,32 +28,31 @@ const CompanyDashboard = () => {
         internshipService.getCompanyInterviews(user.id).catch(() => [])
       ]);
 
-      if (jobs && jobs.length > 0) {
-        const active = jobs.filter((j) => j.status === 'active');
+      if (jobs) {
+        const active = jobs.filter((j) => j.status === 'active' || !j.status);
         setActiveJobsCount(active.length);
       } else {
-        setActiveJobsCount(MOCK_INTERNSHIPS.length);
+        setActiveJobsCount(0);
       }
 
-      if (apps && apps.length > 0) {
+      if (apps) {
         setTotalApplicantsCount(apps.length);
         setShortlistedCount(apps.filter((a) => a.status === 'Shortlisted' || a.status === 'Selected').length);
         setRecentApplications(apps.slice(0, 5));
       } else {
-        setTotalApplicantsCount(MOCK_APPLICATIONS.length);
-        setShortlistedCount(2);
-        setRecentApplications(MOCK_APPLICATIONS);
+        setTotalApplicantsCount(0);
+        setShortlistedCount(0);
+        setRecentApplications([]);
       }
 
       setCompanyInterviews(interviews || []);
-      setInterviewsCount(interviews ? interviews.filter(i => i.status === 'Scheduled').length : 1);
+      setInterviewsCount(interviews ? interviews.filter(i => i.status === 'Scheduled').length : 0);
     } else {
-      // Fallback
-      setActiveJobsCount(MOCK_INTERNSHIPS.length);
-      setTotalApplicantsCount(MOCK_APPLICATIONS.length);
-      setInterviewsCount(1);
-      setShortlistedCount(2);
-      setRecentApplications(MOCK_APPLICATIONS);
+      setActiveJobsCount(0);
+      setTotalApplicantsCount(0);
+      setInterviewsCount(0);
+      setShortlistedCount(0);
+      setRecentApplications([]);
     }
     setLoading(false);
   };
@@ -79,7 +78,7 @@ const CompanyDashboard = () => {
   const filteredInterviews = companyInterviews.filter((item) => {
     if (interviewFilter === 'today') return item.date === todayStr && item.status === 'Scheduled';
     if (interviewFilter === 'completed') return item.status === 'Completed' || item.status === 'Cancelled';
-    return item.status === 'Scheduled'; // Default upcoming
+    return item.status === 'Scheduled';
   });
 
   return (
@@ -186,7 +185,7 @@ const CompanyDashboard = () => {
           {filteredInterviews.length === 0 ? (
             <div className="p-8 text-center bg-slate-800/30 rounded-2xl border border-slate-700/40 text-slate-400 space-y-2">
               <Calendar className="w-8 h-8 text-slate-500 mx-auto" />
-              <p className="text-sm font-semibold text-white">No interviews in this section</p>
+              <p className="text-sm font-semibold text-white">No interviews scheduled</p>
               <p className="text-xs text-slate-400">
                 To schedule an interview, navigate to <Link to="/company/applicants" className="text-indigo-400 font-bold hover:underline">Applicants Pipeline</Link> and select "Schedule Interview".
               </p>
@@ -285,30 +284,39 @@ const CompanyDashboard = () => {
             </Link>
           </div>
 
-          <div className="space-y-3">
-            {recentApplications.map((app) => (
-              <Card key={app.id} variant="glass" hoverable={false} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-slate-800">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
-                    {(app.studentName || 'S').charAt(0)}
+          {recentApplications.length === 0 ? (
+            <EmptyState
+              title="No Candidate Submissions Yet"
+              description="Post an active internship to start receiving AI-ranked candidate applications."
+              actionLabel="Post Your First Internship"
+              onAction={() => (window.location.href = '/company/post-job')}
+            />
+          ) : (
+            <div className="space-y-3">
+              {recentApplications.map((app) => (
+                <Card key={app.id} variant="glass" hoverable={false} className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+                      {(app.studentName || 'S').charAt(0)}
+                    </div>
+                    <div>
+                      <h4 className="text-white font-bold text-sm">{app.studentName || 'Applicant'}</h4>
+                      <p className="text-xs text-slate-400">
+                        Applied for: <strong>{app.jobTitle}</strong> • {app.studentCollege || 'University Student'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-white font-bold text-sm">{app.studentName || 'Applicant'}</h4>
-                    <p className="text-xs text-slate-400">
-                      Applied for: <strong>{app.jobTitle}</strong> • {app.studentCollege || 'University Student'}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    {app.matchScore || 85}% Match
-                  </span>
-                  <span className="text-xs text-emerald-400 font-semibold">{app.status}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      {app.matchScore || 85}% Match
+                    </span>
+                    <span className="text-xs text-emerald-400 font-semibold">{app.status}</span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

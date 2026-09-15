@@ -79,52 +79,11 @@ export const internshipService = {
 
         return items;
       }
+      return [];
     } catch (err) {
-      console.warn('Supabase fetch internships fallback:', err);
+      console.warn('Supabase fetch internships notice:', err);
+      return [];
     }
-
-    // Client mock data fallback
-    let result = [...MOCK_INTERNSHIPS];
-
-    if (filters.query && filters.query.trim() !== '') {
-      const q = filters.query.trim().toLowerCase();
-      result = result.filter(
-        (j) =>
-          j.title.toLowerCase().includes(q) ||
-          j.companyName.toLowerCase().includes(q) ||
-          j.location.toLowerCase().includes(q) ||
-          j.workMode.toLowerCase().includes(q) ||
-          (j.skills && j.skills.some((s) => s.toLowerCase().includes(q)))
-      );
-    }
-
-    if (filters.location && filters.location.trim() !== '') {
-      const loc = filters.location.trim().toLowerCase();
-      if (loc === 'remote') {
-        result = result.filter(
-          (j) => j.workMode.toLowerCase() === 'remote' || j.location.toLowerCase().includes('remote')
-        );
-      } else {
-        result = result.filter((j) => j.location.toLowerCase().includes(loc));
-      }
-    }
-
-    if (filters.workMode && filters.workMode !== 'All') {
-      result = result.filter((j) => j.workMode.toLowerCase() === filters.workMode.toLowerCase());
-    }
-
-    if (filters.minStipend) {
-      result = result.filter((j) => j.stipendValue >= Number(filters.minStipend));
-    }
-
-    // Verified Companies Priority Sorting (Verified employers appear first)
-    result.sort((a, b) => {
-      if (a.verified && !b.verified) return -1;
-      if (!a.verified && b.verified) return 1;
-      return 0;
-    });
-
-    return result;
   },
 
   /**
@@ -163,7 +122,7 @@ export const internshipService = {
       // ignore
     }
 
-    return MOCK_INTERNSHIPS.find((j) => j.id === id) || MOCK_INTERNSHIPS[0];
+    return null;
   },
 
   /**
@@ -173,16 +132,14 @@ export const internshipService = {
     try {
       const row = {
         company_id: companyUserId,
-        company_name: jobData.companyName || 'Microsoft',
-        company_logo:
-          jobData.companyLogo ||
-          'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+        company_name: jobData.companyName || 'Corporate Employer',
+        company_logo: jobData.companyLogo || '',
         title: jobData.title,
         description: jobData.description,
         location: jobData.location,
         work_mode: jobData.workMode,
         stipend: jobData.stipend,
-        stipend_value: jobData.stipendValue || 50000,
+        stipend_value: jobData.stipendValue || 0,
         duration: jobData.duration,
         skills: jobData.skills,
         deadline: jobData.deadline,
@@ -194,20 +151,10 @@ export const internshipService = {
 
       if (!error && data) return data;
     } catch (err) {
-      console.warn('Supabase create internship fallback:', err);
+      console.warn('Supabase create internship error:', err);
     }
 
-    const mockJob = {
-      id: `job_${Date.now()}`,
-      companyId: companyUserId,
-      postedAt: new Date().toISOString(),
-      applicantsCount: 0,
-      matchScore: 90,
-      status: jobData.saveDraft ? 'draft' : 'active',
-      ...jobData,
-    };
-    MOCK_INTERNSHIPS.unshift(mockJob);
-    return mockJob;
+    return null;
   },
 
   /**
@@ -231,7 +178,7 @@ export const internshipService = {
           id: item.id,
           companyId: item.company_id,
           companyName: item.company_name || 'Tech Company',
-          companyLogo: item.company_logo || 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+          companyLogo: item.company_logo || '',
           title: item.title,
           description: item.description,
           location: item.location,
@@ -247,11 +194,11 @@ export const internshipService = {
           applicantsCount: 0,
         }));
       }
+      return [];
     } catch (err) {
-      console.warn('Supabase fetch company internships fallback:', err);
+      console.warn('Supabase fetch company internships notice:', err);
+      return [];
     }
-
-    return MOCK_INTERNSHIPS;
   },
 
   /**
@@ -436,10 +383,11 @@ export const internshipService = {
             matchScore: 94,
           }));
       }
+      return [];
     } catch (err) {
-      console.warn('Supabase fetch saved jobs fallback:', err);
+      console.warn('Supabase fetch saved jobs notice:', err);
+      return [];
     }
-    return MOCK_INTERNSHIPS.slice(0, 2);
   },
 
   /**
@@ -457,11 +405,9 @@ export const internshipService = {
         return data.map((a) => ({
           id: a.id,
           jobId: a.internship_id,
-          jobTitle: a.internships?.title || 'Software Engineering Intern',
-          companyName: a.internships?.company_name || 'Tech Giant',
-          companyLogo:
-            a.internships?.company_logo ||
-            'https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg',
+          jobTitle: a.internships?.title || 'Internship Role',
+          companyName: a.internships?.company_name || 'Hiring Company',
+          companyLogo: a.internships?.company_logo || '',
           studentId: a.student_id,
           status: a.status,
           appliedAt: a.applied_at || a.created_at,
@@ -470,10 +416,11 @@ export const internshipService = {
           interviewDetails: a.interview_details,
         }));
       }
+      return [];
     } catch (err) {
-      console.warn('Supabase fetch student applications fallback:', err);
+      console.warn('Supabase fetch student applications notice:', err);
+      return [];
     }
-    return MOCK_APPLICATIONS;
   },
 
   /**
@@ -489,10 +436,11 @@ export const internshipService = {
       if (!error && data) {
         return data.map(app => app.internship_id);
       }
+      return [];
     } catch (err) {
-      console.warn('Supabase fetch student applied job IDs fallback:', err);
+      console.warn('Supabase fetch student applied job IDs notice:', err);
+      return [];
     }
-    return MOCK_APPLICATIONS.map(a => a.jobId);
   },
 
   /**
@@ -509,11 +457,11 @@ export const internshipService = {
         return data.map((a) => ({
           id: a.id,
           jobId: a.internship_id,
-          jobTitle: a.internships?.title || 'Software Engineering Intern',
+          jobTitle: a.internships?.title || 'Internship Role',
           studentName: a.student_name || 'Candidate Student',
-          studentEmail: a.student_email || 'student@university.edu',
-          studentCollege: a.student_college || 'Indian Institute of Technology',
-          studentDegree: a.student_degree || 'B.Tech Computer Science',
+          studentEmail: a.student_email || '',
+          studentCollege: a.student_college || '',
+          studentDegree: a.student_degree || '',
           appliedAt: a.applied_at || a.created_at,
           status: a.status,
           matchScore: a.match_score || 88,
@@ -522,10 +470,11 @@ export const internshipService = {
           interviewDetails: a.interview_details,
         }));
       }
+      return [];
     } catch (err) {
-      console.warn('Supabase fetch company applications fallback:', err);
+      console.warn('Supabase fetch company applications notice:', err);
+      return [];
     }
-    return MOCK_APPLICATIONS;
   },
 
   /**

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import UserAvatar from '../Common/UserAvatar';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -174,18 +175,9 @@ const Sidebar = () => {
         {/* User Card & Logout */}
         <div className="pt-4 border-t border-slate-800/80 space-y-3">
           <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-slate-950/60 border border-slate-800">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 p-0.5 shadow-md shrink-0">
-              <img
-                src={
-                  user?.avatar ||
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
-                }
-                alt={user?.name}
-                className="w-full h-full rounded-full object-cover"
-              />
-            </div>
+            <UserAvatar name={user?.name} email={user?.email} src={user?.avatar} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-white truncate">{user?.name || 'User Account'}</p>
+              <p className="text-xs font-bold text-white truncate">{user?.name || user?.email || 'User Account'}</p>
               <p className="text-[10px] text-indigo-400 font-semibold truncate capitalize">
                 {currentRole || 'Student Candidate'}
               </p>
