@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import WelcomeBanner from '../components/Common/WelcomeBanner';
 import Hero from '../components/Hero/Hero';
@@ -10,6 +11,21 @@ import Testimonials from '../components/Testimonials/Testimonials';
 import CTA from '../components/CTA/CTA';
 
 const Home = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollTo) {
+      const elem = document.getElementById(location.state.scrollTo);
+      if (elem) {
+        setTimeout(() => {
+          elem.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [location]);
+
   return (
     <MainLayout>
       {/* Optional Session Banner */}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Sparkles, Twitter, Github, Linkedin, Instagram, Mail, Heart } from 'lucide-react';
 import Container from '../Container/Container';
 
@@ -15,6 +16,10 @@ const formatExternalUrl = (url) => {
 
 const Footer = ({ socialLinks = {} }) => {
   const currentYear = new Date().getFullYear();
+
+  const handleScrollTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const socials = [
     {
@@ -46,14 +51,14 @@ const Footer = ({ socialLinks = {} }) => {
           
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
-            <a href="#home" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg">
+            <Link to="/" onClick={handleScrollTop} className="flex items-center gap-2.5 group cursor-pointer">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-extrabold text-white">
+              <span className="text-xl font-extrabold text-white group-hover:text-indigo-200 transition-colors">
                 InternConnect <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">AI</span>
               </span>
-            </a>
+            </Link>
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               Launch your career with AI-powered internship discovery. We bridge the gap between talented university students and leading global tech employers.
             </p>
@@ -90,11 +95,11 @@ const Footer = ({ socialLinks = {} }) => {
           <div>
             <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Platform</h4>
             <ul className="space-y-2.5 text-sm">
-              <li><a href="#home" className="hover:text-indigo-400 transition-colors">Home</a></li>
-              <li><a href="#features" className="hover:text-indigo-400 transition-colors">Features</a></li>
-              <li><a href="#categories" className="hover:text-indigo-400 transition-colors">Categories</a></li>
-              <li><a href="#companies" className="hover:text-indigo-400 transition-colors">Top Companies</a></li>
-              <li><a href="#testimonials" className="hover:text-indigo-400 transition-colors">Testimonials</a></li>
+              <li><Link to="/" onClick={handleScrollTop} className="hover:text-indigo-400 transition-colors">Home</Link></li>
+              <li><a href="/#features" className="hover:text-indigo-400 transition-colors">Features</a></li>
+              <li><a href="/#categories" className="hover:text-indigo-400 transition-colors">Categories</a></li>
+              <li><a href="/#companies" className="hover:text-indigo-400 transition-colors">Top Companies</a></li>
+              <li><a href="/#testimonials" className="hover:text-indigo-400 transition-colors">Testimonials</a></li>
             </ul>
           </div>
 

@@ -49,13 +49,42 @@ const Navbar = () => {
     navigate('/');
   };
 
+  const handleHomeClick = (e) => {
+    if (location.pathname === '/') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false);
+  };
+
+  const handleNavClick = (e, href) => {
+    setMobileMenuOpen(false);
+    if (href === '/') {
+      handleHomeClick(e);
+    } else if (href.startsWith('/#')) {
+      const targetId = href.replace('/#', '');
+      if (location.pathname === '/') {
+        e.preventDefault();
+        const elem = document.getElementById(targetId);
+        if (elem) {
+          elem.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        e.preventDefault();
+        navigate('/', { state: { scrollTo: targetId } });
+      }
+    }
+  };
+
   // Dynamic Navigation items:
-  // On public pages (or for unauthenticated users), show public navbar items
-  // On internal dashboard routes when authenticated, show role dashboard items
+  // Both public visitors and logged-in users get a clear "Home" button returning to '/'
   const getNavLinks = () => {
     if (!isAuthenticated || isHomepage) {
       return [
-        { name: 'Home', href: '/' },
+        { name: 'Home', href: '/', icon: HomeIcon },
         { name: 'Features', href: '/#features' },
         { name: 'Companies', href: '/#companies' },
         { name: 'Categories', href: '/#categories' },
@@ -64,7 +93,7 @@ const Navbar = () => {
 
     if (role === 'student') {
       return [
-        { name: 'Landing Page', href: '/', icon: HomeIcon },
+        { name: 'Home', href: '/', icon: HomeIcon },
         { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
         { name: 'Search Internships', href: '/explore', icon: Briefcase },
         { name: 'Portfolio Builder', href: '/student/portfolio', icon: Folder },
@@ -74,7 +103,7 @@ const Navbar = () => {
       ];
     } else if (role === 'company') {
       return [
-        { name: 'Landing Page', href: '/', icon: HomeIcon },
+        { name: 'Home', href: '/', icon: HomeIcon },
         { name: 'Dashboard', href: '/company/dashboard', icon: LayoutDashboard },
         { name: 'Post Internship', href: '/company/post-job', icon: Briefcase },
         { name: 'Applicants', href: '/company/applicants', icon: FileText },
@@ -82,7 +111,7 @@ const Navbar = () => {
       ];
     } else {
       return [
-        { name: 'Landing Page', href: '/', icon: HomeIcon },
+        { name: 'Home', href: '/', icon: HomeIcon },
         { name: 'Admin Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
         { name: 'Verifications', href: '/admin/verification', icon: User },
         { name: 'User Moderation', href: '/admin/users', icon: User },
@@ -106,15 +135,17 @@ const Navbar = () => {
       >
         <Container>
           <nav className="flex items-center justify-between" aria-label="Main Navigation">
-            {/* Brand Logo */}
+            {/* Brand Logo - Wraps icon + text in React Router Link */}
             <Link
               to="/"
-              className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg p-1"
+              onClick={handleHomeClick}
+              className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950 rounded-xl p-1.5 cursor-pointer transition-all hover:opacity-95"
+              aria-label="InternConnect AI Home"
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-105 transition-transform duration-300 border border-indigo-400/30">
-                <Sparkles className="w-5 h-5 text-white animate-pulse-slow" />
+                <Sparkles className="w-5 h-5 text-white animate-pulse-slow pointer-events-none" />
               </div>
-              <span className="text-xl font-extrabold tracking-tight text-white flex items-center gap-1 font-sans">
+              <span className="text-xl font-extrabold tracking-tight text-white flex items-center gap-1 font-sans group-hover:text-indigo-200 transition-colors">
                 InternConnect <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">AI</span>
               </span>
             </Link>
@@ -123,12 +154,25 @@ const Navbar = () => {
             <ul className="hidden md:flex items-center space-x-1 lg:space-x-2">
               {navLinks.map((link) => {
                 const IconComponent = link.icon;
+                const isHome = link.href === '/';
+                const isHash = link.href.startsWith('/#');
+
                 return (
                   <li key={link.name}>
-                    {link.href.startsWith('/#') ? (
+                    {isHome ? (
+                      <Link
+                        to="/"
+                        onClick={handleHomeClick}
+                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {IconComponent && <IconComponent className="w-3.5 h-3.5 text-indigo-400" />}
+                        <span>{link.name}</span>
+                      </Link>
+                    ) : isHash ? (
                       <a
                         href={link.href}
-                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+                        onClick={(e) => handleNavClick(e, link.href)}
+                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         {IconComponent && <IconComponent className="w-3.5 h-3.5 text-indigo-400" />}
                         <span>{link.name}</span>
@@ -136,7 +180,7 @@ const Navbar = () => {
                     ) : (
                       <Link
                         to={link.href}
-                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         {IconComponent && <IconComponent className="w-3.5 h-3.5 text-indigo-400" />}
                         <span>{link.name}</span>
@@ -188,7 +232,8 @@ const Navbar = () => {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-300 hover:text-white rounded-xl bg-slate-900 border border-slate-800"
+              className="md:hidden p-2 text-slate-300 hover:text-white rounded-xl bg-slate-900 border border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              aria-label="Toggle Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -206,27 +251,41 @@ const Navbar = () => {
             >
               <Container className="py-6 space-y-4">
                 <ul className="flex flex-col space-y-2">
-                  {navLinks.map((link) => (
-                    <li key={link.name}>
-                      {link.href.startsWith('/#') ? (
-                        <a
-                          href={link.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block"
-                        >
-                          {link.name}
-                        </a>
-                      ) : (
-                        <Link
-                          to={link.href}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block"
-                        >
-                          {link.name}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
+                  {navLinks.map((link) => {
+                    const isHome = link.href === '/';
+                    const isHash = link.href.startsWith('/#');
+
+                    return (
+                      <li key={link.name}>
+                        {isHome ? (
+                          <Link
+                            to="/"
+                            onClick={handleHomeClick}
+                            className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block flex items-center gap-2 cursor-pointer"
+                          >
+                            <HomeIcon className="w-4 h-4 text-indigo-400" />
+                            <span>{link.name}</span>
+                          </Link>
+                        ) : isHash ? (
+                          <a
+                            href={link.href}
+                            onClick={(e) => handleNavClick(e, link.href)}
+                            className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block cursor-pointer"
+                          >
+                            {link.name}
+                          </a>
+                        ) : (
+                          <Link
+                            to={link.href}
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block cursor-pointer"
+                          >
+                            {link.name}
+                          </Link>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <div className="pt-4 border-t border-slate-800 flex flex-col gap-2">
