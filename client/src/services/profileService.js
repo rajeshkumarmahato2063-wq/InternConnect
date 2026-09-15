@@ -114,4 +114,22 @@ export const profileService = {
       return profileData;
     }
   },
+
+  /**
+   * Delete account with role protection (Admin accounts are strictly prohibited from self-service deletion)
+   */
+  deleteAccount: async (userId, role) => {
+    if (role === 'admin') {
+      throw new Error('ADMIN_DELETE_RESTRICTED: Admin accounts cannot be deleted via self-service.');
+    }
+
+    try {
+      await supabase.from('profiles').delete().eq('id', userId);
+      await supabase.auth.signOut();
+      return true;
+    } catch (err) {
+      console.warn('Delete account exception:', err.message);
+      throw err;
+    }
+  },
 };
