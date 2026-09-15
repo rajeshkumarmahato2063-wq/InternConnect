@@ -9,6 +9,8 @@ import PasswordInput from '../../components/Auth/PasswordInput';
 import LoadingButton from '../../components/Auth/LoadingButton';
 import { useAuth } from '../../context/AuthContext';
 
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
 // Zod Validation Schema
 const studentRegisterSchema = z
   .object({
@@ -19,11 +21,15 @@ const studentRegisterSchema = z
     degree: z.string().min(2, 'Degree & Major is required'),
     graduationYear: z.coerce.number().min(2024, 'Graduation year must be valid'),
     skills: z.string().optional(),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    confirmPassword: z.string().min(6, 'Please confirm your password'),
+    password: z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(PASSWORD_REGEX, 'Password must contain at least one letter and one number'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Passwords do not match.',
     path: ['confirmPassword'],
   });
 

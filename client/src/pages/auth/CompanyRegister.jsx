@@ -9,20 +9,26 @@ import PasswordInput from '../../components/Auth/PasswordInput';
 import LoadingButton from '../../components/Auth/LoadingButton';
 import { useAuth } from '../../context/AuthContext';
 
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
 const companyRegisterSchema = z
   .object({
     companyName: z.string().min(2, 'Company name is required'),
-    email: z.string().min(1, 'Official email is required').email('Enter a valid corporate email'),
+    email: z.string().min(1, 'Official corporate email is required').email('Enter a valid corporate email address'),
     website: z.string().url('Enter a valid website URL (e.g. https://company.com)'),
     industry: z.string().min(2, 'Industry type is required'),
     companySize: z.string().min(1, 'Company size is required'),
     location: z.string().min(2, 'Headquarters location is required'),
     hrName: z.string().min(2, 'HR Contact Name is required'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
-    confirmPassword: z.string().min(6, 'Please confirm your password'),
+    password: z
+      .string()
+      .min(1, 'Password is required')
+      .min(8, 'Password must be at least 8 characters long')
+      .regex(PASSWORD_REGEX, 'Password must contain at least one letter and one number'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Passwords do not match.',
     path: ['confirmPassword'],
   });
 
@@ -42,7 +48,7 @@ const CompanyRegister = () => {
       email: '',
       website: 'https://',
       industry: 'Enterprise Software & Cloud',
-      companySize: '50-200 employees',
+      companySize: '51-200 employees',
       location: '',
       hrName: '',
       password: '',
@@ -57,10 +63,12 @@ const CompanyRegister = () => {
         {
           companyName: data.companyName,
           email: data.email,
+          password: data.password,
           website: data.website,
           industry: data.industry,
           companySize: data.companySize,
           location: data.location,
+          hrName: data.hrName,
           name: data.hrName,
         },
         'company'
@@ -68,7 +76,20 @@ const CompanyRegister = () => {
 
       navigate('/company/dashboard');
     } catch (err) {
-      setServerError(err.message || 'Registration failed');
+      const errMsg = err.message || '';
+      if (
+        errMsg.toLowerCase().includes('already registered') ||
+        errMsg.toLowerCase().includes('already in use') ||
+        errMsg.toLowerCase().includes('user_already_exists')
+      ) {
+        setServerError('This corporate email is already registered. Please sign in instead.');
+      } else if (errMsg.toLowerCase().includes('password')) {
+        setServerError('Password does not meet requirements. Minimum 8 characters with letters and numbers required.');
+      } else if (errMsg.toLowerCase().includes('invalid email') || errMsg.toLowerCase().includes('email')) {
+        setServerError('Please enter a valid corporate email address.');
+      } else {
+        setServerError(errMsg || 'Registration failed. Please check your information and try again.');
+      }
     }
   };
 
