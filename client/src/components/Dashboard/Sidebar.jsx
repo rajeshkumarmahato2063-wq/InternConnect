@@ -16,7 +16,8 @@ import {
   Users,
   Building2,
   ShieldCheck,
-  BookOpen
+  BookOpen,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -31,6 +32,7 @@ const Sidebar = () => {
   const studentNavItems = [
     { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
     { name: 'Explore Internships', href: '/explore', icon: Search },
+    { name: 'Messages & Chat', href: '/student/messages', icon: MessageSquare },
     { name: 'Skill Hub', href: '/skill-hub', icon: ShieldCheck },
     { name: 'Assessments', href: '/student/assessments', icon: BookOpen },
     { name: 'Saved Jobs', href: '/saved-jobs', icon: Bookmark },
@@ -40,6 +42,7 @@ const Sidebar = () => {
 
   const companyNavItems = [
     { name: 'Dashboard', href: '/company/dashboard', icon: LayoutDashboard },
+    { name: 'Messages & Chat', href: '/company/messages', icon: MessageSquare },
     { name: 'Post Internship', href: '/company/post-job', icon: PlusCircle },
     { name: 'Manage Jobs', href: '/company/jobs', icon: Briefcase },
     { name: 'Applicants', href: '/company/applicants', icon: Users },
@@ -49,6 +52,7 @@ const Sidebar = () => {
 
   const adminNavItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Moderation Chat', href: '/admin/messages', icon: MessageSquare },
     { name: 'Verification', href: '/admin/verification', icon: ShieldCheck },
     { name: 'User Management', href: '/admin/users', icon: Users },
   ];
@@ -68,6 +72,7 @@ const Sidebar = () => {
   const isLinkActive = (itemHref) => {
     const current = location.pathname;
     if (current === itemHref) return true;
+    if (itemHref.includes('messages') && current.includes('messages')) return true;
     if (itemHref.startsWith('/student/') && current === itemHref) return true;
     if (itemHref === '/explore' && (current === '/explore' || current === '/student/explore')) return true;
     if (itemHref === '/saved-jobs' && (current === '/saved-jobs' || current === '/student/saved-jobs')) return true;

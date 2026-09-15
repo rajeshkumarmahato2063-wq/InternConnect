@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Briefcase, Calendar, Award, CheckCircle2, Bookmark, ArrowRight, ArrowLeft, Sparkles, FileText } from 'lucide-react';
+import { MapPin, Briefcase, Calendar, Award, CheckCircle2, Bookmark, ArrowRight, ArrowLeft, Sparkles, FileText, MessageSquare } from 'lucide-react';
 import MainLayout from '../../layouts/MainLayout';
 import Container from '../../components/Container/Container';
 import Card from '../../components/Card/Card';
@@ -11,6 +11,7 @@ import ResumeMatchCard from '../../components/AI/ResumeMatchCard';
 import AICoverLetterModal from '../../components/AI/AICoverLetterModal';
 import { apiService } from '../../services/api';
 import { internshipService } from '../../services/internshipService';
+import { messagingService } from '../../services/messagingService';
 import { useAuth } from '../../context/AuthContext';
 
 const InternshipDetail = () => {
@@ -206,6 +207,34 @@ const InternshipDetail = () => {
                   >
                     Generate AI Cover Letter
                   </Button>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!applied) return;
+                      try {
+                        const conv = await messagingService.getOrCreateConversation({
+                          studentId: user?.id || 'stud_101',
+                          recruiterId: job.companyId || job.company_id || 'rec_202',
+                          internshipId: job.id,
+                          conversationType: 'student_recruiter',
+                        });
+                        window.location.href = `/student/messages?convId=${conv.id}`;
+                      } catch (err) {
+                        console.error('Failed to open recruiter chat:', err);
+                      }
+                    }}
+                    disabled={!applied}
+                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${
+                      applied
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md border-indigo-400/30 cursor-pointer hover:brightness-110'
+                        : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed opacity-60'
+                    }`}
+                    title={applied ? 'Chat directly with hiring manager' : 'Submit application to message recruiter'}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{applied ? 'Message Recruiter' : 'Message Recruiter (Applied Only)'}</span>
+                  </button>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-xs text-indigo-200">

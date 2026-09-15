@@ -38,11 +38,12 @@ import AIInterviewQuestionsModal from '../../components/Modals/AIInterviewQuesti
 import RejectionFeedbackModal from '../../components/Modals/RejectionFeedbackModal';
 import { useAuth } from '../../context/AuthContext';
 import { internshipService } from '../../services/internshipService';
-import UserAvatar from '../../components/Common/UserAvatar';
 import { emailService } from '../../services/emailService';
 import { aiRecruiterService } from '../../services/aiRecruiterService';
 import { notificationService } from '../../services/notificationService';
+import { messagingService } from '../../services/messagingService';
 import { supabase } from '../../services/supabaseClient';
+import { MessageSquare } from 'lucide-react';
 
 const STATUSES = ['All', 'Applied', 'Reviewing', 'Shortlisted', 'Interview Scheduled', 'Selected', 'Rejected'];
 const SCORE_FILTERS = [
@@ -730,6 +731,29 @@ const ApplicantManagement = () => {
                           >
                             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                             <span>Interview Kit</span>
+                          </button>
+
+                          {/* Message Applicant Button */}
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const conv = await messagingService.getOrCreateConversation({
+                                  studentId: app.studentId || app.student_id || 'stud_101',
+                                  recruiterId: user?.id || 'rec_202',
+                                  internshipId: app.jobId || app.internship_id,
+                                  conversationType: 'student_recruiter',
+                                });
+                                window.location.href = `/company/messages?convId=${conv.id}`;
+                              } catch (err) {
+                                console.error('Failed to open applicant chat:', err);
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                            title="Message Applicant directly"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5 text-blue-300" />
+                            <span>Chat</span>
                           </button>
 
                           {/* Shortlist */}

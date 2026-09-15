@@ -32,7 +32,9 @@ const StudentResume = lazy(() => import('./pages/Student/StudentResume'));
 const StudentInterviews = lazy(() => import('./pages/Student/StudentInterviews'));
 const StudentOffers = lazy(() => import('./pages/Student/StudentOffers'));
 const StudentCertificates = lazy(() => import('./pages/Student/StudentCertificates'));
-const MessagingCenter = lazy(() => import('./pages/Messaging/MessagingCenter'));
+const StudentMessagesPage = lazy(() => import('./pages/Messaging/StudentMessagesPage'));
+const RecruiterMessagesPage = lazy(() => import('./pages/Messaging/RecruiterMessagesPage'));
+const AdminMessagesPage = lazy(() => import('./pages/Messaging/AdminMessagesPage'));
 const SettingsPage = lazy(() => import('./pages/Settings/SettingsPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const SavedJobs = lazy(() => import('./pages/Student/SavedJobs'));
@@ -115,9 +117,8 @@ function App() {
                   <Route path="/student/saved-jobs" element={<SavedJobs />} />
                   <Route path="/student/explore" element={<ExploreInternships />} />
                   <Route path="/student/ai-tools" element={<AICareerTools />} />
-                  <Route path="/student/notifications" element={<NotificationsPage />} />
-                  <Route path="/student/settings" element={<SettingsPage />} />
-                  <Route path="/student/skill-hub" element={<SkillHub />} />
+                  <Route path="/student/messages" element={<StudentMessagesPage />} />
+                  <Route path="/messages" element={<StudentMessagesPage />} />
 
                   {/* Top-Level Route Aliases rendering inside the same DashboardLayout */}
                   <Route path="/explore" element={<ExploreInternships />} />
@@ -130,15 +131,6 @@ function App() {
                   <Route path="/skill-challenge/:id" element={<TakeChallengePortal />} />
                   <Route path="/internship/:id" element={<InternshipDetail />} />
                 </Route>
-
-                <Route
-                  path="/messages"
-                  element={
-                    <ProtectedRoute>
-                      <MessagingCenter />
-                    </ProtectedRoute>
-                  }
-                />
 
                 {/* Protected Company Routes */}
                 <Route
@@ -189,6 +181,16 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+                <Route
+                  path="/company/messages"
+                  element={
+                    <ProtectedRoute allowedRole="company">
+                      <DashboardLayout>
+                        <RecruiterMessagesPage />
+                      </DashboardLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
                 {/* Protected Admin Routes */}
                 <Route
@@ -236,6 +238,16 @@ function App() {
                   element={
                     <ProtectedRoute allowedRole="admin">
                       <AdminReports />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/messages"
+                  element={
+                    <ProtectedRoute allowedRole="admin">
+                      <DashboardLayout>
+                        <AdminMessagesPage />
+                      </DashboardLayout>
                     </ProtectedRoute>
                   }
                 />
