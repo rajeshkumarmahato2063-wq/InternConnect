@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, MapPin, Filter, Sparkles, X, Briefcase, Calendar, DollarSign, Clock, Users, ArrowRight, Share2, CheckCircle2, Bookmark, RefreshCw } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
-import Sidebar from '../components/Dashboard/Sidebar';
 import EmptyState from '../components/Common/EmptyState';
 import LoadingSkeleton from '../components/Common/LoadingSkeleton';
 import InternshipCard from '../components/Common/InternshipCard';
@@ -216,10 +215,8 @@ const ExploreInternships = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col lg:flex-row">
-      <Sidebar />
-      
-      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+    <>
+      <div className="flex-1 flex flex-col min-h-[calc(100vh-100px)]">
         {/* Top Sticky Header with Search Bar */}
         <header className="shrink-0 p-4 sm:p-6 border-b border-slate-800/80 bg-[#090d16]/90 backdrop-blur-xl z-10 space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -320,7 +317,7 @@ const ExploreInternships = () => {
             )}
           </aside>
         </div>
-      </main>
+      </div>
 
       {/* Mobile Details Modal */}
       <AnimatePresence>
@@ -368,7 +365,7 @@ const ExploreInternships = () => {
         isOpen={Boolean(selectedApplyJob)}
         onClose={() => setSelectedApplyJob(null)}
       />
-    </div>
+    </>
   );
 };
 

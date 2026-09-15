@@ -12,9 +12,9 @@ const Card = ({
   const baseStyles = 'rounded-2xl p-6 transition-all duration-300 relative overflow-hidden';
 
   const variantStyles = {
-    glass: 'bg-slate-900/60 backdrop-blur-xl border border-white/10 text-slate-100 shadow-xl shadow-black/20',
-    default: 'bg-slate-900 border border-slate-800 text-slate-100 shadow-lg',
-    elevated: 'bg-gradient-to-b from-slate-800/80 to-slate-900/90 backdrop-blur-xl border border-indigo-500/20 text-slate-100 shadow-2xl shadow-indigo-950/40',
+    glass: 'bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl shadow-slate-200/50 dark:shadow-black/20',
+    default: 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-lg shadow-slate-200/50 dark:shadow-none',
+    elevated: 'bg-gradient-to-b from-white to-slate-50 dark:from-slate-800/80 dark:to-slate-900/90 backdrop-blur-xl border border-indigo-500/20 text-slate-900 dark:text-slate-100 shadow-2xl shadow-indigo-500/10 dark:shadow-indigo-950/40',
   };
 
   const hoverStyles = hoverable

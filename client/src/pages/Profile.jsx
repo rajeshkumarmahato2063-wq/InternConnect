@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Phone, GraduationCap, BookOpen, Calendar, Github, Linkedin, Globe, Save, CheckCircle2, X, Plus } from 'lucide-react';
-import Sidebar from '../components/Dashboard/Sidebar';
-import TopBar from '../components/Dashboard/TopBar';
 import ProfileProgressRing from '../components/Dashboard/ProfileProgressRing';
 import Card from '../components/Card/Card';
 import Button from '../components/Button/Button';
@@ -94,13 +92,7 @@ const StudentProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col lg:flex-row">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <TopBar title="My Profile & Settings" />
-
-        <main className="p-6 sm:p-8 space-y-8 max-w-5xl mx-auto w-full">
+    <div className="space-y-8 max-w-5xl mx-auto w-full">
           {/* Profile Completion Indicator */}
           <ProfileProgressRing percentage={user?.profileCompletion || 0} />
 
@@ -405,8 +397,6 @@ const StudentProfile = () => {
               </div>
             </form>
           </Card>
-        </main>
-      </div>
     </div>
   );
 };

@@ -18,8 +18,6 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Sidebar from '../components/Dashboard/Sidebar';
-import TopBar from '../components/Dashboard/TopBar';
 import StatCard from '../components/Dashboard/StatCard';
 import ProfileProgressRing from '../components/Dashboard/ProfileProgressRing';
 import Card from '../components/Card/Card';
@@ -105,15 +103,7 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col lg:flex-row">
-      {/* Sidebar Navigation */}
-      <Sidebar />
-
-      {/* Main Body */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <TopBar title="Student Candidate Dashboard" />
-
-        <main className="p-6 sm:p-8 space-y-8 max-w-7xl mx-auto w-full">
+    <div className="space-y-8 max-w-7xl mx-auto w-full">
           {/* Welcome Hero Banner */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -379,8 +369,6 @@ const StudentDashboard = () => {
               )}
             </div>
           </div>
-        </main>
-      </div>
     </div>
   );
 };
