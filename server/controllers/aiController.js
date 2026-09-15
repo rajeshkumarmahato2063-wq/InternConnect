@@ -264,7 +264,7 @@ export const handleGeminiChat = async (req, res) => {
   }
 };
 
-// AI Internship Copilot Controller using Gemini API
+// AI Internship Copilot Controller using Gemini API (Gemini 2.5 Flash)
 export const processCopilotChat = async (req, res) => {
   try {
     const {
@@ -273,6 +273,7 @@ export const processCopilotChat = async (req, res) => {
       conversationHistory = [],
       studentSkills = ['React', 'JavaScript', 'Node.js', 'Git'],
       studentName = 'Candidate',
+      userRole = 'student',
     } = req.body;
 
     const queryMessage = userMessage || message;
@@ -289,23 +290,51 @@ export const processCopilotChat = async (req, res) => {
     if (apiKey && apiKey !== 'YOUR_GEMINI_API_KEY') {
       try {
         const ai = new GoogleGenAI({ apiKey });
-        const systemPrompt = `You are InternConnect AI Copilot — an expert AI Career Coach and Tech Recruiter.
-Help candidate ${studentName} (Skills: ${JSON.stringify(studentSkills)}).
-Your core capabilities include:
-1. Recommending tailored internships based on skills
-2. Analyzing resumes and explaining missing skills
-3. Generating cover letters & ATS optimization tips
-4. Preparing technical/HR interview questions with answers
-5. Creating step-by-step career roadmaps
+        const systemPrompt = `You are InternConnect AI Copilot.
 
-Respond helpfully, concisely, and format key points with bullet points or bold text.`;
+You help university students and recruiters.
+
+Candidate Context:
+- Name: ${studentName}
+- Role: ${userRole}
+- Skills: ${JSON.stringify(studentSkills)}
+
+Your expertise includes:
+* Internships
+* Placements
+* Resume optimization
+* ATS scoring
+* Cover letters
+* Interview preparation
+* Java
+* Python
+* C
+* React
+* Data Structures
+* Operating Systems
+* Career planning
+* GitHub
+* LinkedIn
+* Coding projects
+
+Answer naturally like ChatGPT.
+Be concise but practical.
+If the user asks general programming or career questions, answer them instead of refusing.
+If the user asks for mock interview practice, ask one question at a time, wait for their answer, provide feedback, and ask the next question.`;
 
         const candidateModels = ['gemini-2.5-flash', 'gemini-3.6-flash', 'gemini-1.5-flash'];
         let replyText = '';
+        let selectedModel = '';
+
+        const historySlice = (conversationHistory || []).slice(-10).map((h) => {
+          const sender = h.sender === 'user' ? 'User' : 'Copilot';
+          return `${sender}: ${h.text}`;
+        }).join('\n');
+
+        const promptWithContext = `${systemPrompt}\n\nRecent Conversation History:\n${historySlice}\n\nUser Question: ${queryMessage}`;
 
         for (const model of candidateModels) {
           try {
-            const promptWithContext = `${systemPrompt}\n\nRecent context: ${JSON.stringify(conversationHistory.slice(-4))}\n\nUser: ${queryMessage}`;
             const response = await ai.models.generateContent({
               model,
               contents: promptWithContext,
@@ -313,6 +342,7 @@ Respond helpfully, concisely, and format key points with bullet points or bold t
 
             if (response && response.text) {
               replyText = response.text.trim();
+              selectedModel = model;
               break;
             }
           } catch (modelErr) {
@@ -323,34 +353,20 @@ Respond helpfully, concisely, and format key points with bullet points or bold t
         if (replyText) {
           return res.status(200).json({
             success: true,
-            source: 'gemini',
+            model: selectedModel,
+            source: 'gemini-2.5-flash',
             reply: replyText,
             text: replyText,
           });
         }
       } catch (geminiError) {
-        console.warn('Gemini Copilot API call failed, using intelligent AI fallback:', geminiError.message);
+        console.warn('Gemini Copilot API call failed:', geminiError.message);
       }
     }
 
-    // Heuristic AI Copilot Response Engine
-    const query = userMessage.toLowerCase();
-    let reply = 'I am your InternConnect AI Internship Copilot! Ask me to recommend internships, analyze your resume, generate a cover letter, prepare for technical interviews, or outline a career roadmap.';
-
-    if (query.includes('find') || query.includes('internship') || query.includes('recommend')) {
-      reply = `⚡ **Recommended Internships for Your Profile:**\n\n1. **Full-Stack Web Engineering Intern** at *TechCorp* (Match Score: 94%)\n   - Stipend: ₹45,000/month • Remote\n2. **Frontend Developer Intern** at *Nexus Cloud* (Match Score: 91%)\n   - Stipend: ₹40,000/month • Bangalore\n3. **React & Cloud Systems Intern** at *Google* (Match Score: 88%)\n   - Stipend: ₹75,000/month • Hybrid\n\nWould you like me to generate a tailored cover letter for any of these roles?`;
-    } else if (query.includes('resume') || query.includes('analyze') || query.includes('score')) {
-      reply = `📄 **AI Resume Analysis & Score:**\n\n- **Overall Match Score:** 92%\n- **Top Strengths:** React.js architecture, Git version control, REST API design.\n- **Missing Skills to Target:** Docker containerization, MongoDB indexing.\n- **Quick Improvement Tip:** Add quantitative metrics to your top project bullet points (e.g. "Improved page load speed by 35%").`;
-    } else if (query.includes('cover letter') || query.includes('generate')) {
-      reply = `✉️ **Generated Cover Letter Snippet:**\n\nDear Hiring Manager,\nI am writing to express my enthusiastic interest in the Software Engineering Internship. My background in React, Node.js, and Supabase directly aligns with your engineering standards. I take pride in building scalable web applications and look forward to contributing to your team.\n\n*Click the 'Generate Cover Letter' tool on any job page for a full PDF export!*`;
-    } else if (query.includes('interview') || query.includes('prep') || query.includes('question')) {
-      reply = `🎙️ **Top Technical Interview Questions for Your Stack:**\n\n1. **React Reconciliation:** How does the Virtual DOM diffing algorithm work, and why are keys essential in mapped lists?\n2. **State Management:** When would you choose Context API vs Redux/Zustand?\n3. **System Design:** How do you handle authentication securely with JWT tokens and Supabase Row Level Security?`;
-    }
-
-    return res.status(200).json({
-      success: true,
-      source: 'heuristic-engine',
-      reply,
+    return res.status(502).json({
+      success: false,
+      error: 'Unable to connect to Gemini AI service. Please ensure GEMINI_API_KEY is configured on the server.',
     });
   } catch (error) {
     console.error('AI Copilot error:', error);

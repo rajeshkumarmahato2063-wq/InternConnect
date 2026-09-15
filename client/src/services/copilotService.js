@@ -1,6 +1,8 @@
 import { supabase } from './supabaseClient';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '' : 'http://localhost:5000');
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const copilotService = {
   // Load conversation history for current user from Supabase ai_conversations table
@@ -11,7 +13,8 @@ export const copilotService = {
         .from('ai_conversations')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .limit(20);
 
       if (error || !data) return [];
 
@@ -76,36 +79,51 @@ export const copilotService = {
     }
   },
 
-  // Send message to AI Copilot via Backend Gemini Chat Endpoint & persist into Supabase
+  // Send message to Gemini AI Copilot (via Supabase Edge function or backend API) & persist into Supabase
   sendMessage: async ({ userId, userRole = 'student', message, history = [] }) => {
     let reply = '';
-    let userContext = null;
+    let lastErr = null;
 
-    // 1. Primary: Direct call to official backend Gemini Chat API
-    try {
-      const chatRes = await fetch(`${API_BASE_URL}/api/ai/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message }),
-      });
+    const userContext = await copilotService.getUserContextMemory(userId, userRole);
+    const last10History = (history || []).slice(-10);
 
-      if (chatRes.ok) {
-        const data = await chatRes.json();
-        if (data.reply || data.text) {
-          reply = data.reply || data.text;
+    // 1. Primary: Try Supabase Edge Function ai-copilot
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      try {
+        const edgeRes = await fetch(`${SUPABASE_URL}/functions/v1/ai-copilot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'apikey': SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            message,
+            userMessage: message,
+            userRole,
+            userContext,
+            conversationHistory: last10History,
+          }),
+        });
+
+        if (edgeRes.ok) {
+          const edgeData = await edgeRes.json();
+          if (edgeData.reply || edgeData.text) {
+            reply = edgeData.reply || edgeData.text;
+          }
+        } else {
+          const errData = await edgeRes.json().catch(() => ({}));
+          console.warn('Supabase Edge function ai-copilot warning:', errData.error || edgeRes.statusText);
         }
-      } else {
-        const errJson = await chatRes.json().catch(() => ({}));
-        console.warn('Gemini chat backend error:', errJson.error || chatRes.statusText);
+      } catch (edgeErr) {
+        console.warn('Supabase Edge function fetch exception:', edgeErr.message);
+        lastErr = edgeErr;
       }
-    } catch (apiErr) {
-      console.warn('Backend /api/ai/chat error, trying copilot fallback:', apiErr.message);
     }
 
-    // 2. Fallback: Try /api/ai/copilot endpoint
+    // 2. Secondary: Call Express Backend /api/ai/copilot or /api/ai/chat
     if (!reply) {
       try {
-        userContext = await copilotService.getUserContextMemory(userId, userRole);
         const backRes = await fetch(`${API_BASE_URL}/api/ai/copilot`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -115,7 +133,7 @@ export const copilotService = {
             userRole,
             studentName: userContext?.name || 'Candidate',
             studentSkills: userContext?.skills || [],
-            conversationHistory: history,
+            conversationHistory: last10History,
           }),
         });
 
@@ -124,38 +142,44 @@ export const copilotService = {
           if (json.reply || json.text) {
             reply = json.reply || json.text;
           }
+        } else {
+          const errJson = await backRes.json().catch(() => ({}));
+          lastErr = new Error(errJson.error || errJson.message || `Backend status ${backRes.status}`);
         }
       } catch (backErr) {
-        console.warn('Backend copilot fallback error:', backErr.message);
+        console.warn('Backend copilot API exception:', backErr.message);
+        lastErr = backErr;
       }
     }
 
-    // 3. Client Heuristic Fallback
+    // 3. Fallback: Direct backend Gemini chat route /api/ai/chat
     if (!reply) {
-      if (!userContext) {
-        userContext = await copilotService.getUserContextMemory(userId, userRole);
-      }
-      const query = message.toLowerCase();
-      const skillsArr = Array.isArray(userContext?.skills) ? userContext.skills : ['React', 'JavaScript', 'Git'];
-      const skillsStr = skillsArr.slice(0, 3).join(', ') || 'Software Engineering';
+      try {
+        const chatRes = await fetch(`${API_BASE_URL}/api/ai/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
 
-      if (query.includes('find') || query.includes('internship') || query.includes('recommend')) {
-        reply = `⚡ **Personalized Internship Recommendations for ${userContext?.name || 'Candidate'}:**\n\n1. **Full-Stack Engineering Intern** at *TechCorp*\n   - Stipend: ₹45,000/month • Match Reason: Fits your skills (${skillsStr}).\n2. **Frontend Systems Intern** at *Nexus Cloud*\n   - Stipend: ₹40,000/month • Match Reason: Highly rated web engineering role.\n3. **Software Developer Intern** at *Google*\n   - Stipend: ₹75,000/month • Match Reason: Matches your ${userContext?.degree || 'Computer Science'} background.`;
-      } else if (query.includes('resume') || query.includes('review') || query.includes('ats')) {
-        reply = `📄 **AI Resume Review for ${userContext?.name || 'Candidate'}:**\n\n- **ATS Match Score:** 92%\n- **Top Strengths:** Clean formatting, strong foundation in ${skillsStr}.\n- **Suggested Enhancements:** Add quantifiable impact metrics to your top project bullet points (e.g. "Reduced REST API response latency by 40%").`;
-      } else if (query.includes('cover letter') || query.includes('letter')) {
-        reply = `✉️ **Personalized Cover Letter Snippet:**\n\nDear Hiring Manager,\nI am writing to express my enthusiastic interest in the Software Engineering Internship position. As a student at ${userContext?.college || 'University'}, my hands-on background in ${skillsStr} directly aligns with your requirements.`;
-      } else if (query.includes('interview') || query.includes('prep') || query.includes('question')) {
-        reply = `🎙️ **Targeted Technical Interview Questions for ${userContext?.name || 'Candidate'}:**\n\n1. **React State & Effects:** How do custom hooks encapsulate stateful logic without duplicating component code?\n2. **Database System Design:** How do indexes accelerate SELECT queries, and what is the trade-off during INSERTs?\n3. **Behavioral STAR Scenario:** Describe a situation where you resolved a technical disagreement with a teammate.`;
-      } else if (query.includes('roadmap') || query.includes('career') || query.includes('learn')) {
-        reply = `🗺️ **Customized 6-Month Career Roadmap for ${userContext?.name || 'Candidate'}:**\n\n- **Month 1:** Master Advanced React patterns, Custom Hooks & Tailwind CSS\n- **Month 2:** Build Node.js & Supabase RLS backend REST APIs\n- **Month 3:** Containerize applications using Docker & GitHub Actions CI/CD\n- **Month 4-6:** Technical interview prep & mock interviews`;
-      } else {
-        reply = `Hello ${userContext?.name || 'Candidate'}! I am your InternConnect AI Copilot. Ask me to recommend internships based on your profile, review your resume, generate a cover letter, prepare for technical interviews, or outline a career roadmap.`;
+        if (chatRes.ok) {
+          const data = await chatRes.json();
+          if (data.reply || data.text) {
+            reply = data.reply || data.text;
+          }
+        } else {
+          const errData = await chatRes.json().catch(() => ({}));
+          lastErr = new Error(errData.error || errData.message || `HTTP ${chatRes.status}`);
+        }
+      } catch (apiErr) {
+        lastErr = apiErr;
       }
     }
 
+    if (!reply) {
+      throw lastErr || new Error('Gemini API is currently unreachable. Please verify your GEMINI_API_KEY environment variable or network connection.');
+    }
 
-    // Persist into Supabase ai_conversations table
+    // Persist conversation into Supabase ai_conversations table
     if (userId && reply) {
       try {
         await supabase.from('ai_conversations').insert({

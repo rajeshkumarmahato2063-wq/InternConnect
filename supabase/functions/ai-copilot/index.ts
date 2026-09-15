@@ -1,5 +1,5 @@
 // Supabase Edge Function: ai-copilot
-// Description: Secure serverless gateway for Gemini 1.5 Flash API calls with personalized context memory.
+// Description: Secure serverless gateway for Gemini 2.5 Flash API calls with conversation memory.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -14,7 +14,16 @@ serve(async (req) => {
   }
 
   try {
-    const { userMessage, userRole = "student", userContext = {}, conversationHistory = [] } = await req.json();
+    const { message, userMessage = message, userRole = "student", userContext = {}, conversationHistory = [] } = await req.json();
+
+    const queryMessage = userMessage || message;
+
+    if (!queryMessage || (typeof queryMessage === "string" && !queryMessage.trim())) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Message is required." }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      );
+    }
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
 
@@ -22,7 +31,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: false,
-          message: "GEMINI_API_KEY is missing in Supabase Edge Secrets.",
+          error: "GEMINI_API_KEY is missing in Supabase Edge Secrets.",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
       );
@@ -31,38 +40,48 @@ serve(async (req) => {
     const { name = "Candidate", skills = [], college = "", degree = "", companyName = "" } = userContext;
     const skillsList = Array.isArray(skills) ? skills.join(", ") : skills;
 
-    const systemPrompt = userRole === "company"
-      ? `You are InternConnect AI Copilot — an Executive Talent Recruiter & Hiring Advisor for ${companyName || 'Recruiters'}.
-Your capabilities include:
-1. Ranking candidates based on job specifications
-2. Writing high-converting internship descriptions
-3. Formulating technical & HR interview questions
-4. Drafting polite candidate rejection emails & offer letters
+    const systemPrompt = `You are InternConnect AI Copilot.
 
-Respond professionally, practically, and concisely.`
-      : `You are InternConnect AI Copilot — an expert Career Mentor & Tech Recruiter for student ${name}.
-Student Context:
+You help university students and recruiters.
+
+Candidate Context:
 - Name: ${name}
+- Role: ${userRole}
 - College: ${college}
 - Degree: ${degree}
-- Skills: ${skillsList || "React, JavaScript, Software Engineering"}
+- Skills: ${skillsList || "React, JavaScript, Data Structures, Python"}
+${companyName ? `- Company: ${companyName}` : ''}
 
-Your core capabilities include:
-1. Recommending tailored internships based on skills
-2. Analyzing resumes and explaining missing skills
-3. Generating ATS-optimized cover letters
-4. Preparing technical/HR/behavioral interview questions
-5. Creating step-by-step career roadmaps
+Your expertise includes:
+* Internships
+* Placements
+* Resume optimization
+* ATS scoring
+* Cover letters
+* Interview preparation
+* Java
+* Python
+* C
+* React
+* Data Structures
+* Operating Systems
+* Career planning
+* GitHub
+* LinkedIn
+* Coding projects
 
-IMPORTANT: Address the student directly by name (${name}) and reference their specific background and skills in recommendations!`;
+Answer naturally like ChatGPT.
+Be concise but practical.
+If the user asks general programming or career questions, answer them instead of refusing.
+If the user asks for mock interview practice, ask one relevant question at a time, wait for their answer, evaluate it with feedback, and then ask the next question.`;
 
     const geminiContents = [
       { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: `Understood! I am ready to act as ${name}'s InternConnect AI Copilot.` }] },
+      { role: "model", parts: [{ text: `Understood! I am InternConnect AI Copilot. I am ready to answer any programming, internship, resume, or career questions.` }] },
     ];
 
-    // Append past context messages
-    (conversationHistory || []).slice(-6).forEach((msg: any) => {
+    // Append last 10 messages for conversation memory
+    (conversationHistory || []).slice(-10).forEach((msg: any) => {
       geminiContents.push({
         role: msg.sender === "user" ? "user" : "model",
         parts: [{ text: msg.text }],
@@ -71,28 +90,63 @@ IMPORTANT: Address the student directly by name (${name}) and reference their sp
 
     geminiContents.push({
       role: "user",
-      parts: [{ text: userMessage }],
+      parts: [{ text: queryMessage }],
     });
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: geminiContents }),
-    });
+    // Models ordered by priority: Gemini 2.5 Flash primary
+    const candidateModels = ["gemini-2.5-flash", "gemini-3.6-flash", "gemini-1.5-flash"];
+    let replyText = "";
+    let selectedModel = "";
+    let lastErrorMsg = "";
 
-    if (!geminiRes.ok) {
-      throw new Error(`Gemini API HTTP Error: ${geminiRes.status}`);
+    for (const model of candidateModels) {
+      try {
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const geminiRes = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: geminiContents,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 2048,
+            },
+          }),
+        });
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            replyText = text.trim();
+            selectedModel = model;
+            break;
+          }
+        } else {
+          const errData = await geminiRes.json().catch(() => ({}));
+          lastErrorMsg = errData?.error?.message || `HTTP ${geminiRes.status}`;
+        }
+      } catch (err: any) {
+        lastErrorMsg = err.message;
+      }
     }
 
-    const geminiData = await geminiRes.json();
-    const replyText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "I am here to assist with your career and internship search!";
+    if (!replyText) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Gemini service error: ${lastErrorMsg || "Failed to generate content"}`,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 502 }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        source: "gemini-1.5-flash-edge",
-        reply: replyText.trim(),
+        model: selectedModel,
+        reply: replyText,
+        text: replyText,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
