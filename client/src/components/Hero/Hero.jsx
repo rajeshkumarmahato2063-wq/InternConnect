@@ -77,13 +77,33 @@ const Hero = () => {
     }
   };
 
+  const getDashboardPath = () => {
+    const currentRole = role || user?.role || 'student';
+    if (currentRole === 'company') return '/company/dashboard';
+    if (currentRole === 'admin') return '/admin/dashboard';
+    return '/student/dashboard';
+  };
+
   const handleGetStarted = (e) => {
     if (e) e.preventDefault();
-    setIsChatOpen(true);
+    if (!isAuthenticated || !user) {
+      navigate('/auth/select-role');
+    } else {
+      navigate(getDashboardPath());
+    }
   };
 
   const handleExplore = () => {
-    setIsChatOpen(true);
+    if (!isAuthenticated || !user) {
+      navigate('/auth/select-role');
+    } else {
+      const currentRole = role || user?.role || 'student';
+      if (currentRole === 'student') {
+        navigate('/explore');
+      } else {
+        navigate(getDashboardPath());
+      }
+    }
   };
   return (
     <section id="home" className="relative pt-32 pb-20 lg:pt-40 lg:pb-32 overflow-hidden">
@@ -110,10 +130,16 @@ const Hero = () => {
             transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
             className="lg:col-span-7 text-center lg:text-left flex flex-col items-center lg:items-start"
           >
-            {/* Kicker Badge */}
-            <Badge variant="accent" icon={Sparkles} className="mb-6 py-1.5 px-4 text-xs font-semibold tracking-wider">
-              AI-Powered Career Accelerator
-            </Badge>
+            {/* Kicker Badge - Clicking opens AI Chatbot */}
+            <button
+              type="button"
+              onClick={() => setIsChatOpen(true)}
+              className="group flex items-center gap-2 mb-6"
+            >
+              <Badge variant="accent" icon={Sparkles} className="py-1.5 px-4 text-xs font-semibold tracking-wider group-hover:scale-105 transition-transform cursor-pointer">
+                AI-Powered Career Accelerator • Chat with AI Assistant
+              </Badge>
+            </button>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight text-white leading-[1.1] mb-6">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Menu, X, Bell, User, LayoutDashboard, Briefcase, FileText, LogOut, LogIn, UserPlus, Folder } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, Menu, X, User, LayoutDashboard, Briefcase, FileText, LogOut, LogIn, UserPlus, Folder, Home as HomeIcon } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../Button/Button';
 import Container from '../Container/Container';
 import RoleSwitcher from '../Common/RoleSwitcher';
@@ -16,12 +16,44 @@ const Navbar = () => {
   const { isAuthenticated, role, user, logout } = useAuth();
   const { unreadCount, toggleDrawer } = useNotifications();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isScrolled = scrollPosition > 20;
+  const isHomepage = location.pathname === '/';
 
-  // Dynamic Navigation items based on Authentication state and Role
+  const getDashboardPath = () => {
+    const currentRole = role || user?.role || 'student';
+    if (currentRole === 'company') return '/company/dashboard';
+    if (currentRole === 'admin') return '/admin/dashboard';
+    return '/student/dashboard';
+  };
+
+  const handleLoginClick = () => {
+    if (!isAuthenticated || !user) {
+      navigate('/auth/select-role');
+    } else {
+      navigate(getDashboardPath());
+    }
+  };
+
+  const handleRegisterClick = () => {
+    navigate('/auth/select-role');
+  };
+
+  const handleGoToDashboardClick = () => {
+    navigate(getDashboardPath());
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  // Dynamic Navigation items:
+  // On public pages (or for unauthenticated users), show public navbar items
+  // On internal dashboard routes when authenticated, show role dashboard items
   const getNavLinks = () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || isHomepage) {
       return [
         { name: 'Home', href: '/' },
         { name: 'Features', href: '/#features' },
@@ -32,6 +64,7 @@ const Navbar = () => {
 
     if (role === 'student') {
       return [
+        { name: 'Landing Page', href: '/', icon: HomeIcon },
         { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
         { name: 'Search Internships', href: '/explore', icon: Briefcase },
         { name: 'Portfolio Builder', href: '/student/portfolio', icon: Folder },
@@ -41,6 +74,7 @@ const Navbar = () => {
       ];
     } else if (role === 'company') {
       return [
+        { name: 'Landing Page', href: '/', icon: HomeIcon },
         { name: 'Dashboard', href: '/company/dashboard', icon: LayoutDashboard },
         { name: 'Post Internship', href: '/company/post-job', icon: Briefcase },
         { name: 'Applicants', href: '/company/applicants', icon: FileText },
@@ -48,6 +82,7 @@ const Navbar = () => {
       ];
     } else {
       return [
+        { name: 'Landing Page', href: '/', icon: HomeIcon },
         { name: 'Admin Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
         { name: 'Verifications', href: '/admin/verification', icon: User },
         { name: 'User Moderation', href: '/admin/users', icon: User },
@@ -57,14 +92,9 @@ const Navbar = () => {
 
   const navLinks = getNavLinks();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/auth/select-role');
-  };
-
   return (
     <>
-      {/* Role Switcher Demo Bar (When authenticated or testing) */}
+      {/* Role Switcher Demo Bar (When authenticated) */}
       {isAuthenticated && <RoleSwitcher />}
 
       <header
@@ -95,13 +125,23 @@ const Navbar = () => {
                 const IconComponent = link.icon;
                 return (
                   <li key={link.name}>
-                    <Link
-                      to={link.href}
-                      className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
-                    >
-                      {IconComponent && <IconComponent className="w-3.5 h-3.5 text-indigo-400" />}
-                      <span>{link.name}</span>
-                    </Link>
+                    {link.href.startsWith('/#') ? (
+                      <a
+                        href={link.href}
+                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+                      >
+                        {IconComponent && <IconComponent className="w-3.5 h-3.5 text-indigo-400" />}
+                        <span>{link.name}</span>
+                      </a>
+                    ) : (
+                      <Link
+                        to={link.href}
+                        className="px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white rounded-xl hover:bg-slate-800/60 transition-all duration-200 flex items-center gap-1.5"
+                      >
+                        {IconComponent && <IconComponent className="w-3.5 h-3.5 text-indigo-400" />}
+                        <span>{link.name}</span>
+                      </Link>
+                    )}
                   </li>
                 );
               })}
@@ -111,6 +151,11 @@ const Navbar = () => {
             <div className="hidden md:flex items-center space-x-3">
               {isAuthenticated ? (
                 <>
+                  {/* Prominent Go to Dashboard button */}
+                  <Button variant="primary" size="sm" onClick={handleGoToDashboardClick} icon={LayoutDashboard}>
+                    Go to Dashboard
+                  </Button>
+
                   {/* Notifications Bell Dropdown */}
                   <NotificationBellDropdown />
 
@@ -129,10 +174,10 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <Button variant="secondary" size="sm" onClick={() => navigate('/auth/select-role')} icon={LogIn}>
+                  <Button variant="secondary" size="sm" onClick={handleLoginClick} icon={LogIn}>
                     Login
                   </Button>
-                  <Button variant="primary" size="sm" onClick={() => navigate('/auth/select-role')} icon={UserPlus}>
+                  <Button variant="primary" size="sm" onClick={handleRegisterClick} icon={UserPlus}>
                     Register
                   </Button>
                 </>
@@ -163,28 +208,43 @@ const Navbar = () => {
                 <ul className="flex flex-col space-y-2">
                   {navLinks.map((link) => (
                     <li key={link.name}>
-                      <Link
-                        to={link.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block"
-                      >
-                        {link.name}
-                      </Link>
+                      {link.href.startsWith('/#') ? (
+                        <a
+                          href={link.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block"
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          to={link.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-800/60 rounded-xl block"
+                        >
+                          {link.name}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
 
                 <div className="pt-4 border-t border-slate-800 flex flex-col gap-2">
                   {isAuthenticated ? (
-                    <Button variant="secondary" fullWidth onClick={handleLogout} icon={LogOut}>
-                      Logout ({user?.name})
-                    </Button>
+                    <>
+                      <Button variant="primary" fullWidth onClick={() => { setMobileMenuOpen(false); handleGoToDashboardClick(); }} icon={LayoutDashboard}>
+                        Go to Dashboard
+                      </Button>
+                      <Button variant="secondary" fullWidth onClick={() => { setMobileMenuOpen(false); handleLogout(); }} icon={LogOut}>
+                        Logout ({user?.name})
+                      </Button>
+                    </>
                   ) : (
                     <>
-                      <Button variant="secondary" fullWidth onClick={() => navigate('/auth/select-role')}>
+                      <Button variant="secondary" fullWidth onClick={() => { setMobileMenuOpen(false); handleLoginClick(); }}>
                         Login
                       </Button>
-                      <Button variant="primary" fullWidth onClick={() => navigate('/auth/select-role')}>
+                      <Button variant="primary" fullWidth onClick={() => { setMobileMenuOpen(false); handleRegisterClick(); }}>
                         Register
                       </Button>
                     </>

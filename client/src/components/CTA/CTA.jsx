@@ -17,16 +17,14 @@ const CTA = () => {
     setNavigating(true);
 
     setTimeout(() => {
-      if (!isAuthenticated) {
-        navigate('/login');
-      } else if (role === 'student' || user?.role === 'student') {
-        navigate('/student/dashboard');
+      if (!isAuthenticated || !user) {
+        navigate('/auth/select-role');
       } else if (role === 'company' || user?.role === 'company') {
         navigate('/company/dashboard');
       } else if (role === 'admin' || user?.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
-        navigate('/login');
+        navigate('/student/dashboard');
       }
       setNavigating(false);
     }, 150);

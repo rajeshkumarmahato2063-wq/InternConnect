@@ -1,6 +1,8 @@
 import React from 'react';
 import MainLayout from '../layouts/MainLayout';
+import WelcomeBanner from '../components/Common/WelcomeBanner';
 import Hero from '../components/Hero/Hero';
+import Features from '../components/Features/Features';
 import FeaturedCompanies from '../components/FeaturedCompanies/FeaturedCompanies';
 import Categories from '../components/Categories/Categories';
 import Stats from '../components/Stats/Stats';
@@ -10,22 +12,28 @@ import CTA from '../components/CTA/CTA';
 const Home = () => {
   return (
     <MainLayout>
-      {/* 2. Hero Section */}
+      {/* Optional Session Banner */}
+      <WelcomeBanner />
+
+      {/* Hero Section */}
       <Hero />
 
-      {/* 3. Featured Companies */}
+      {/* Platform Features Section */}
+      <Features />
+
+      {/* Featured Hiring Companies */}
       <FeaturedCompanies />
 
-      {/* 4. Internship Categories */}
+      {/* Internship Categories */}
       <Categories />
 
-      {/* 5. Platform Statistics */}
+      {/* Platform Statistics */}
       <Stats />
 
-      {/* 6. Testimonials */}
+      {/* Candidate & Recruiter Testimonials */}
       <Testimonials />
 
-      {/* 7. Call to Action */}
+      {/* Final Call to Action */}
       <CTA />
     </MainLayout>
   );

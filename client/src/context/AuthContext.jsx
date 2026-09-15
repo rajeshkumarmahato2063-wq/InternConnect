@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('ic_jwt_token') || null);
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('ic_user_info');
-    return saved ? JSON.parse(saved) : MOCK_USERS[0];
+    return saved ? JSON.parse(saved) : null;
   });
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +27,13 @@ export const AuthProvider = ({ children }) => {
       if (activeSession) {
         setToken(activeSession.access_token);
         fetchAndSetProfile(activeSession.user);
+      } else {
+        // If no active session and no saved local user, ensure guest state
+        const saved = localStorage.getItem('ic_user_info');
+        if (!saved) {
+          setUser(null);
+          setToken(null);
+        }
       }
       setLoading(false);
     });
@@ -39,10 +46,15 @@ export const AuthProvider = ({ children }) => {
       if (currentSession) {
         setToken(currentSession.access_token);
         fetchAndSetProfile(currentSession.user);
-      } else {
-        // Retain current dev fallback user if no active Supabase session
-        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setToken(null);
+        setUser(null);
+        setProfile(null);
+        localStorage.removeItem('ic_jwt_token');
+        localStorage.removeItem('ic_user_info');
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -73,7 +85,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const isAuthenticated = Boolean(token || session || user);
+  const isAuthenticated = Boolean((token || session) && user);
   const currentRole = user?.role || 'student';
 
   // Login handler

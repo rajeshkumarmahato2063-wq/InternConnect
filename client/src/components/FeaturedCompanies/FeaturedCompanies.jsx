@@ -1,9 +1,27 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Container from '../Container/Container';
+import { useAuth } from '../../context/AuthContext';
 
 const FeaturedCompanies = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, user, role } = useAuth();
+
+  const handleExplore = () => {
+    if (!isAuthenticated || !user) {
+      navigate('/auth/select-role');
+    } else {
+      const currentRole = role || user?.role || 'student';
+      if (currentRole === 'company') {
+        navigate('/company/dashboard');
+      } else if (currentRole === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/explore');
+      }
+    }
+  };
   // Statistics data
   const stats = [
     {
@@ -402,9 +420,10 @@ const FeaturedCompanies = () => {
             </p>
 
             <div className="relative mt-7 flex flex-wrap items-center justify-center gap-4">
-              <Link
-                to="/explore"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-white text-sm sm:text-base bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:shadow-[0_0_45px_rgba(99,102,241,0.7)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020817]"
+              <button
+                type="button"
+                onClick={handleExplore}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-white text-sm sm:text-base bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:shadow-[0_0_45px_rgba(99,102,241,0.7)] transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020817] cursor-pointer"
               >
                 <span>Explore Open Internships</span>
                 <svg
@@ -416,7 +435,7 @@ const FeaturedCompanies = () => {
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
-              </Link>
+              </button>
 
               <Link
                 to="/auth/student/register"
